@@ -1,0 +1,1493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Atlantic Safe Co — Dispatch</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<link href="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css" rel="stylesheet"/>
+<script src="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js"></script>
+<style>
+  :root {
+    --navy:#0d1b2a; --navy-mid:#162032; --navy-light:#1e2f44;
+    --gold:#c8922a; --gold-light:#e0a93a; --off-white:#faf9f5;
+    --muted:#8a9bb0; --red:#c0392b; --green:#1e7a4e; --green-light:#27ae60;
+    --border:rgba(200,146,42,0.2); --shadow:0 4px 24px rgba(0,0,0,0.35);
+    --blue:#3498db; --purple:#9b59b6; --orange:#e67e22;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'DM Sans',sans-serif;background:var(--navy);color:var(--off-white);min-height:100vh;}
+
+  /* LOGIN */
+  .login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--navy);position:relative;overflow:hidden;}
+  .login-wrap::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(200,146,42,0.12),transparent 70%);pointer-events:none;}
+  .login-card{width:360px;background:var(--navy-mid);border:1px solid var(--border);border-radius:16px;padding:40px 36px;position:relative;z-index:1;}
+  .login-logo{text-align:center;margin-bottom:32px;}
+  .login-logo img{height:56px;border-radius:6px;}
+  .login-logo h1{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:2px;color:var(--gold);margin-top:10px;}
+  .login-logo p{font-size:12px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-top:2px;}
+
+  /* FORMS */
+  .form-group{margin-bottom:16px;}
+  .form-group label{display:block;font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:6px;}
+  .form-group input,.form-group select,.form-group textarea,
+  .inp{width:100%;background:var(--navy-light);border:1px solid rgba(255,255,255,0.08);border-radius:8px;color:var(--off-white);font-family:'DM Sans',sans-serif;font-size:14px;padding:10px 14px;outline:none;transition:border-color .2s;}
+  .form-group input:focus,.form-group select:focus,.form-group textarea:focus,.inp:focus{border-color:var(--gold);}
+  .form-group select option{background:var(--navy-mid);}
+  .form-group textarea{resize:vertical;min-height:80px;}
+  .form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  .form-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;}
+
+  /* BUTTONS */
+  .btn{display:inline-flex;align-items:center;gap:7px;padding:10px 20px;border-radius:8px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;transition:all .18s;}
+  .btn-gold{background:var(--gold);color:var(--navy);}
+  .btn-gold:hover{background:var(--gold-light);}
+  .btn-outline{background:transparent;border:1px solid var(--border);color:var(--off-white);}
+  .btn-outline:hover{border-color:var(--gold);color:var(--gold);}
+  .btn-danger{background:var(--red);color:#fff;}
+  .btn-green{background:var(--green);color:#fff;}
+  .btn-green:hover{background:var(--green-light);}
+  .btn-blue{background:var(--blue);color:#fff;}
+  .btn-full{width:100%;justify-content:center;padding:12px;font-size:15px;}
+  .error-msg{background:rgba(192,57,43,.15);border:1px solid rgba(192,57,43,.4);color:#ff6b6b;border-radius:8px;padding:10px 14px;font-size:13px;margin-bottom:16px;}
+
+  /* SHELL */
+  .app-shell{display:flex;min-height:100vh;}
+  .sidebar{width:220px;background:var(--navy-mid);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;}
+  .sidebar-logo{padding:20px 18px 16px;border-bottom:1px solid var(--border);}
+  .sidebar-logo img{height:36px;border-radius:4px;}
+  .sidebar-logo .site-name{font-family:'Bebas Neue',sans-serif;font-size:17px;letter-spacing:2px;color:var(--gold);margin-top:6px;}
+  .sidebar-role{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
+  .nav-section{padding:8px 0;border-bottom:1px solid var(--border);}
+  .nav-label{font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);padding:8px 18px 4px;}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:9px 18px;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;border-left:3px solid transparent;color:rgba(250,249,245,.7);}
+  .nav-item:hover{background:rgba(200,146,42,.08);color:var(--off-white);}
+  .nav-item.active{background:rgba(200,146,42,.12);border-left-color:var(--gold);color:var(--gold);}
+  .nav-icon{font-size:16px;width:20px;text-align:center;}
+  .nav-badge{background:var(--red);color:#fff;border-radius:10px;font-size:10px;font-weight:700;padding:1px 6px;margin-left:auto;}
+  .sidebar-footer{margin-top:auto;padding:16px 18px;border-top:1px solid var(--border);}
+  .user-chip{display:flex;align-items:center;gap:10px;}
+  .user-avatar{width:32px;height:32px;border-radius:50%;background:var(--gold);color:var(--navy);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;}
+  .user-name{font-size:13px;font-weight:500;}
+  .user-role-text{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;}
+  .main{flex:1;overflow:auto;}
+
+  /* PAGE */
+  .page-header{padding:24px 28px 0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;}
+  .page-title{font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:2px;color:var(--off-white);}
+  .page-subtitle{font-size:13px;color:var(--muted);margin-top:2px;}
+  .page-body{padding:20px 28px 40px;}
+
+  /* STATS */
+  .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px;}
+  .stat-card{background:var(--navy-mid);border:1px solid var(--border);border-radius:12px;padding:16px 18px;}
+  .stat-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
+  .stat-value{font-family:'Bebas Neue',sans-serif;font-size:36px;color:var(--gold);line-height:1.1;margin-top:4px;}
+  .stat-sub{font-size:11px;color:var(--muted);margin-top:2px;}
+
+  /* JOB CARDS */
+  .jobs-grid{display:flex;flex-direction:column;gap:10px;}
+  .job-card{background:var(--navy-mid);border:1px solid var(--border);border-radius:12px;padding:16px 18px;cursor:pointer;transition:all .18s;display:grid;grid-template-columns:6px 1fr auto;gap:14px;align-items:center;}
+  .job-card:hover{border-color:var(--gold);transform:translateY(-1px);box-shadow:var(--shadow);}
+  .job-status-bar{width:6px;border-radius:4px;min-height:50px;}
+  .job-info{min-width:0;}
+  .job-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .job-id{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);}
+  .job-customer{font-size:15px;font-weight:600;}
+  .job-safe{font-size:12px;color:var(--muted);margin-top:2px;}
+  .job-addr{font-size:12px;color:rgba(250,249,245,.6);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .job-meta{display:flex;align-items:center;gap:14px;font-size:12px;color:var(--muted);flex-shrink:0;text-align:right;}
+  .job-date{font-weight:500;color:var(--off-white);}
+
+  /* BADGES */
+  .badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;}
+  .badge-new{background:rgba(200,146,42,.2);color:var(--gold);}
+  .badge-scheduled{background:rgba(52,152,219,.2);color:#5dade2;}
+  .badge-enroute{background:rgba(243,156,18,.2);color:#f39c12;}
+  .badge-onsite{background:rgba(155,89,182,.2);color:#bb8fce;}
+  .badge-complete{background:rgba(39,174,96,.2);color:#27ae60;}
+  .badge-invoiced{background:rgba(200,146,42,.25);color:var(--gold-light);}
+  .badge-paid{background:rgba(39,174,96,.35);color:#58d68d;}
+  .badge-urgent{background:rgba(192,57,43,.25);color:#e74c3c;}
+
+  /* STATUS COLORS */
+  .status-new{background:var(--gold);}
+  .status-scheduled{background:#3498db;}
+  .status-enroute{background:#f39c12;}
+  .status-onsite{background:#9b59b6;}
+  .status-complete{background:#27ae60;}
+  .status-invoiced{background:var(--gold);}
+  .status-paid{background:#1abc9c;}
+
+  /* MODAL */
+  .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;display:flex;align-items:flex-start;justify-content:center;padding:40px 20px;overflow:auto;}
+  .modal{background:var(--navy-mid);border:1px solid var(--border);border-radius:16px;width:100%;max-width:700px;padding:28px 30px;position:relative;}
+  .modal-wide{max-width:900px;}
+  .modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px;}
+  .modal-title{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:1.5px;}
+  .modal-close{background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;padding:4px;line-height:1;}
+  .modal-close:hover{color:var(--off-white);}
+  .section-divider{border:none;border-top:1px solid var(--border);margin:20px 0;}
+  .section-title{font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold);margin-bottom:14px;}
+  .modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:24px;padding-top:20px;border-top:1px solid var(--border);}
+
+  /* DETAIL */
+  .detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .detail-item label{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:3px;}
+  .detail-item span{font-size:14px;color:var(--off-white);}
+  .notes-box{background:var(--navy-light);border-radius:8px;padding:12px 14px;font-size:13px;color:rgba(250,249,245,.8);line-height:1.5;}
+  .pipeline{display:flex;align-items:center;margin:16px 0;overflow-x:auto;}
+  .pipe-step-wrap{display:flex;flex-direction:column;align-items:center;flex:1;min-width:70px;}
+  .pipe-dot{width:28px;height:28px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;color:var(--muted);cursor:pointer;transition:all .2s;}
+  .pipe-dot.done{background:var(--gold);border-color:var(--gold);color:var(--navy);}
+  .pipe-dot.active{background:var(--navy-light);border-color:var(--gold);color:var(--gold);box-shadow:0 0 0 3px rgba(200,146,42,.2);}
+  .pipe-label{font-size:9px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);text-align:center;margin-top:4px;}
+  .pipe-line{flex:1;height:2px;background:var(--border);margin:0 -4px;}
+  .pipe-line.done{background:var(--gold);}
+
+  /* PHOTO */
+  .photo-zone{border:2px dashed var(--border);border-radius:10px;padding:20px;text-align:center;cursor:pointer;transition:border-color .2s;}
+  .photo-zone:hover{border-color:var(--gold);}
+  .photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:8px;margin-top:12px;}
+  .photo-thumb{position:relative;aspect-ratio:1;border-radius:6px;overflow:hidden;background:var(--navy-light);}
+  .photo-thumb img{width:100%;height:100%;object-fit:cover;}
+  .photo-thumb .remove-photo{position:absolute;top:3px;right:3px;background:rgba(0,0,0,.7);border:none;color:#fff;border-radius:50%;width:18px;height:18px;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+
+  /* MAP */
+  .map-container{border-radius:12px;overflow:hidden;border:1px solid var(--border);}
+  #job-map{height:320px;width:100%;}
+  .map-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px;}
+  .map-stat{background:var(--navy-light);border-radius:8px;padding:12px;text-align:center;}
+  .map-stat-val{font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--gold);}
+  .map-stat-lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
+
+  /* MILEAGE */
+  .mileage-card{background:var(--navy-mid);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin-bottom:14px;}
+  .odometer-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;align-items:end;}
+  .odo-val{font-family:'DM Mono',monospace;font-size:24px;color:var(--gold);letter-spacing:2px;}
+
+  /* HOURS */
+  .hours-table{width:100%;border-collapse:collapse;font-size:13px;}
+  .hours-table th{background:var(--navy-light);color:var(--muted);padding:8px 12px;text-align:left;font-size:10px;letter-spacing:1px;text-transform:uppercase;font-weight:600;}
+  .hours-table td{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.04);}
+  .hours-table tr:last-child td{border-bottom:none;}
+  .clock-btn{padding:6px 14px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;border:none;transition:all .18s;}
+  .clock-in{background:rgba(39,174,96,.2);color:#27ae60;border:1px solid rgba(39,174,96,.3);}
+  .clock-in:hover{background:rgba(39,174,96,.35);}
+  .clock-out{background:rgba(192,57,43,.2);color:#e74c3c;border:1px solid rgba(192,57,43,.3);}
+  .clock-out:hover{background:rgba(192,57,43,.35);}
+  .time-running{color:var(--gold);font-family:'DM Mono',monospace;font-size:12px;}
+
+  /* MESSAGING */
+  .msg-thread{display:flex;flex-direction:column;gap:10px;max-height:420px;overflow-y:auto;padding:4px 0 12px;}
+  .msg-bubble{max-width:75%;padding:10px 14px;border-radius:12px;font-size:13px;line-height:1.5;}
+  .msg-crew{background:var(--navy-light);border:1px solid var(--border);align-self:flex-start;border-bottom-left-radius:4px;}
+  .msg-admin{background:rgba(200,146,42,.15);border:1px solid rgba(200,146,42,.3);align-self:flex-end;border-bottom-right-radius:4px;}
+  .msg-meta{font-size:10px;color:var(--muted);margin-bottom:4px;}
+  .msg-type-badge{display:inline-block;padding:2px 7px;border-radius:10px;font-size:9px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:4px;}
+  .msg-note{background:rgba(52,152,219,.15);color:#5dade2;}
+  .msg-change-order{background:rgba(230,126,34,.15);color:#e67e22;}
+  .msg-charge{background:rgba(192,57,43,.15);color:#e74c3c;}
+  .msg-general{background:rgba(255,255,255,.06);color:var(--muted);}
+  .msg-input-row{display:flex;gap:8px;margin-top:12px;align-items:flex-end;}
+  .msg-type-select{background:var(--navy-light);border:1px solid var(--border);border-radius:8px;color:var(--off-white);font-family:'DM Sans',sans-serif;font-size:12px;padding:8px 10px;outline:none;flex-shrink:0;}
+  .msg-textarea{flex:1;background:var(--navy-light);border:1px solid var(--border);border-radius:8px;color:var(--off-white);font-family:'DM Sans',sans-serif;font-size:13px;padding:9px 12px;outline:none;resize:none;min-height:44px;max-height:100px;}
+  .msg-textarea:focus{border-color:var(--gold);}
+  .unread-dot{width:8px;height:8px;border-radius:50%;background:var(--red);display:inline-block;margin-left:6px;vertical-align:middle;}
+
+  /* CHANGE ORDER */
+  .co-card{background:var(--navy-light);border-left:3px solid var(--orange);border-radius:8px;padding:12px 14px;margin-bottom:8px;}
+  .co-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+  .co-title{font-size:13px;font-weight:600;}
+  .co-amount{font-size:14px;font-weight:700;color:var(--gold);}
+  .co-desc{font-size:12px;color:var(--muted);line-height:1.5;}
+
+  /* INVOICE */
+  .invoice-line{display:grid;grid-template-columns:1fr 80px 100px 30px;gap:10px;align-items:center;margin-bottom:8px;}
+  .invoice-total{display:flex;justify-content:flex-end;padding-top:12px;font-size:18px;font-weight:700;color:var(--gold);}
+  .invoice-preview{background:var(--off-white);color:#141413;border-radius:12px;padding:28px 32px;}
+  .inv-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;}
+  .inv-title{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:2px;color:var(--navy);}
+  .inv-meta{font-size:12px;color:#555;text-align:right;line-height:1.7;}
+  .inv-table{width:100%;border-collapse:collapse;font-size:13px;margin-top:16px;}
+  .inv-table th{background:var(--navy);color:var(--off-white);padding:8px 12px;text-align:left;font-size:11px;letter-spacing:1px;text-transform:uppercase;}
+  .inv-table td{padding:8px 12px;border-bottom:1px solid #e5e0d8;}
+  .inv-footer{margin-top:20px;font-size:11px;color:#888;text-align:center;}
+
+  /* CALENDAR */
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;}
+  .cal-day-header{text-align:center;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);padding:6px 0;}
+  .cal-cell{background:var(--navy-mid);border:1px solid var(--border);border-radius:8px;min-height:80px;padding:8px;}
+  .cal-cell.today{border-color:var(--gold);}
+  .cal-cell.other-month{opacity:.4;}
+  .cal-date{font-size:12px;font-weight:600;margin-bottom:4px;}
+  .cal-job-dot{background:rgba(200,146,42,.3);border-left:2px solid var(--gold);border-radius:3px;padding:2px 5px;font-size:10px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;}
+  .cal-job-dot:hover{background:rgba(200,146,42,.5);}
+
+  /* CREW */
+  .crew-card{background:var(--navy-mid);border:1px solid var(--border);border-radius:12px;padding:16px 18px;display:flex;align-items:center;gap:14px;}
+  .crew-avatar-lg{width:44px;height:44px;border-radius:50%;background:var(--gold);color:var(--navy);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:17px;flex-shrink:0;}
+
+  /* CREW VIEW */
+  .crew-job-card{background:var(--navy-mid);border:1px solid var(--border);border-radius:14px;padding:20px 22px;margin-bottom:14px;}
+  .status-btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;}
+  .status-btn{padding:9px 16px;border-radius:8px;font-size:12px;font-weight:700;letter-spacing:.5px;cursor:pointer;border:2px solid transparent;transition:all .18s;}
+  .status-btn.active-status{border-color:var(--gold);background:rgba(200,146,42,.15);color:var(--gold);}
+  .status-btn:not(.active-status){background:var(--navy-light);color:var(--muted);}
+  .status-btn:hover:not(.active-status){border-color:rgba(200,146,42,.3);color:var(--off-white);}
+
+  /* TABS */
+  .tabs{display:flex;gap:2px;background:var(--navy-light);border-radius:10px;padding:3px;width:fit-content;margin-bottom:20px;}
+  .tab{padding:7px 16px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;color:var(--muted);transition:all .15s;}
+  .tab.active{background:var(--gold);color:var(--navy);}
+
+  /* TOOLBAR */
+  .toolbar{display:flex;align-items:center;gap:10px;margin-bottom:18px;flex-wrap:wrap;}
+  .search-input{background:var(--navy-mid);border:1px solid var(--border);border-radius:8px;color:var(--off-white);font-family:'DM Sans',sans-serif;font-size:13px;padding:8px 14px;outline:none;width:220px;}
+  .search-input:focus{border-color:var(--gold);}
+  .filter-chip{padding:6px 13px;border-radius:20px;border:1px solid var(--border);font-size:11px;font-weight:600;cursor:pointer;color:var(--muted);transition:all .15s;}
+  .filter-chip.active{background:rgba(200,146,42,.2);border-color:var(--gold);color:var(--gold);}
+
+  /* TOAST */
+  .toast{position:fixed;bottom:28px;right:28px;background:var(--navy-mid);border:1px solid var(--gold);border-radius:10px;padding:13px 20px;font-size:13px;color:var(--off-white);z-index:999;box-shadow:var(--shadow);animation:slideUp .3s ease;}
+  @keyframes slideUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+
+  /* EMPTY */
+  .empty-state{text-align:center;padding:60px 20px;color:var(--muted);}
+  .empty-icon{font-size:48px;margin-bottom:14px;opacity:.5;}
+  .empty-state h3{font-size:16px;font-weight:500;margin-bottom:6px;color:var(--off-white);}
+
+  /* MAPBOX OVERRIDES */
+  .mapboxgl-ctrl-logo,.mapboxgl-ctrl-attrib{opacity:.4;}
+
+  @media(max-width:768px){
+    .sidebar{width:56px;}
+    .sidebar-logo .site-name,.nav-label,.nav-item span,.sidebar-footer .user-name,.sidebar-footer .user-role-text{display:none;}
+    .nav-item{padding:12px;justify-content:center;}
+    .stats-row{grid-template-columns:1fr 1fr;}
+    .form-row,.form-row-3{grid-template-columns:1fr;}
+    .page-header{padding:16px 16px 0;}
+    .page-body{padding:14px 16px 40px;}
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script>
+const {useState,useEffect,useRef,useCallback} = React;
+
+// ── CONSTANTS ──
+const BASE_LOCATION = { name:'Atlantic Safe Co — 4920 Christensen Rd, Ft. Pierce FL 34981', coords:[-80.357909,27.375751] };
+const MAPBOX_TOKEN = 'pk.eyJ1Ijoia3BlcmV6MDEiLCJhIjoiY21tM3Q5cTRhMDQ1cjJ5cHQxbTF2NjRneCJ9.5g12VSQUsBUB28kL7wIjkA';
+
+// ── GOOGLE SHEETS CONFIG ──
+// After deploying your Apps Script, paste the Web App URL here:
+const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbyhq0cs0ufmPpQuFZ21W5IXk69iKEPRIg7cXMUpwn_cgqe4W3wWbF4VSjKMeYhO4iY/exec';
+
+// ── EMAILJS CONFIG ──
+// From emailjs.com dashboard after setup:
+const EMAILJS_SERVICE_ID  = 'service_mfy41jp';
+const EMAILJS_TEMPLATE_ID = 'template_6x7em0u';
+const EMAILJS_PUBLIC_KEY  = 'NDxzUe2EJCTYJUJxS';
+const ADMIN_EMAIL         = 'atlanticsafe@gmail.com';
+
+const SHEETS_READY  = () => !!SHEETS_URL;
+const EMAILJS_READY = () => !!(EMAILJS_SERVICE_ID && EMAILJS_TEMPLATE_ID && EMAILJS_PUBLIC_KEY);
+
+const USERS = [
+  {id:'admin1',username:'owner',password:'atlantic2024',name:'Jason R.',role:'admin',phone:'772-555-0100',initials:'JR'},
+  {id:'admin2',username:'admin',password:'SafeCo2026!',name:'Admin Test',role:'admin',phone:'772-204-9055',initials:'AT'},
+  {id:'crew1',username:'mike',password:'crew1234',name:'Mike T.',role:'crew_lead',phone:'772-555-0101',initials:'MT'},
+  {id:'crew2',username:'darius',password:'crew1234',name:'Darius W.',role:'crew',phone:'772-555-0102',initials:'DW'},
+  {id:'crew3',username:'alex',password:'crew1234',name:'Alex M.',role:'crew',phone:'772-555-0103',initials:'AM'},
+  {id:'crew4',username:'sam',password:'crew1234',name:'Sam B.',role:'crew',phone:'772-555-0104',initials:'SB'},
+];
+
+const SERVICES = [
+  {id:'s1',name:'Safe Delivery (Local)',price:150},
+  {id:'s2',name:'Safe Delivery (Long Distance)',price:250},
+  {id:'s3',name:'Safe Move (In-Home)',price:125},
+  {id:'s4',name:'Safe Installation / Bolting',price:75},
+  {id:'s5',name:'Stair Fee (per flight)',price:50},
+  {id:'s6',name:'Long Carry Fee',price:40},
+  {id:'s7',name:'Safe Removal / Haul Away',price:100},
+  {id:'s8',name:'Safe Wash / Cleaning',price:85},
+  {id:'s9',name:'Trailer Fee',price:60},
+  {id:'s10',name:'Rush / Same-Day Fee',price:100},
+];
+
+const STATUS_PIPELINE = ['New','Scheduled','En Route','On Site','Complete','Invoiced','Paid'];
+const STATUS_CLASS = {'New':'new','Scheduled':'scheduled','En Route':'enroute','On Site':'onsite','Complete':'complete','Invoiced':'invoiced','Paid':'paid'};
+const TRAILERS = ['None','Trailer A','Trailer B','Both Trailers'];
+const MSG_TYPES = ['General Note','Change Order','Extra Charge','Issue / Problem','Completed'];
+
+const SAMPLE_JOBS = [
+  {
+    id:'JOB-001',status:'Scheduled',customer:'Robert H.',phone:'772-555-1234',email:'robert@email.com',
+    safeType:'Liberty Presidential 50',weight:'600 lbs',safeSize:'60"H×30"W×26"D',
+    pickupAddr:'5280 US-1, Fort Pierce FL 34982',deliveryAddr:'2210 Sunrise Blvd, Fort Pierce FL 34982',
+    deliveryCoords:[-80.3391,27.4512],
+    date:'2026-03-18',time:'09:00',crew:['crew1','crew2'],vehicle:'Truck #1',trailer:'Trailer A',
+    notes:'Stairs at delivery — 2 flights. Customer has dog, keep gate closed.',
+    photos:[],invoiceLines:[],paid:false,createdAt:'2026-03-17T08:00:00',
+    messages:[
+      {id:'m1',from:'crew1',type:'General Note',text:'On our way, traffic on US-1.',ts:'2026-03-18T09:15:00',read:true},
+      {id:'m2',from:'admin1',text:'Copy, be safe out there.',ts:'2026-03-18T09:18:00',isAdmin:true,read:true},
+    ],
+    changeOrders:[],
+    timeEntries:[{crewId:'crew1',clockIn:'2026-03-18T09:00:00',clockOut:null}],
+    estimatedMiles:8,actualMiles:null
+  },
+  {
+    id:'JOB-002',status:'Complete',customer:'Maria G.',phone:'772-555-5678',email:'maria@email.com',
+    safeType:'Rhino RSC2042',weight:'300 lbs',safeSize:'42"H×20"W×18"D',
+    pickupAddr:'3091 SE Jay St, Stuart FL 34997',deliveryAddr:'880 Palm Way, Stuart FL 34994',
+    deliveryCoords:[-80.2524,27.1975],
+    date:'2026-03-17',time:'14:00',crew:['crew1','crew3'],vehicle:'Truck #1',trailer:'None',
+    notes:'First floor, no stairs. Tight doorway — measure first.',
+    photos:[],invoiceLines:[{serviceId:'s1',desc:'Safe Delivery (Local)',qty:1,price:150}],
+    paid:false,createdAt:'2026-03-16T10:00:00',
+    messages:[
+      {id:'m3',from:'crew3',type:'Change Order',text:'Customer wants safe bolted to floor — not on original order.',ts:'2026-03-17T15:10:00',read:false,extraCharge:75},
+    ],
+    changeOrders:[{id:'co1',desc:'Floor bolting not on original order',amount:75,status:'pending',by:'crew3',ts:'2026-03-17T15:10:00'}],
+    timeEntries:[
+      {crewId:'crew1',clockIn:'2026-03-17T14:00:00',clockOut:'2026-03-17T16:30:00'},
+      {crewId:'crew3',clockIn:'2026-03-17T14:00:00',clockOut:'2026-03-17T16:45:00'},
+    ],
+    estimatedMiles:22,actualMiles:24
+  }
+];
+
+const SAMPLE_MILEAGE = [
+  {date:'2026-03-17',crewId:'crew1',vehicle:'Truck #1',odometerStart:14250,odometerEnd:14298,totalMiles:48,jobs:['JOB-002']}
+];
+
+// ── STORAGE — Google Sheets + localStorage fallback ──
+async function sheetsGet(action) {
+  if (!SHEETS_READY()) return null;
+  try {
+    const res = await fetch(`${SHEETS_URL}?action=${action}`);
+    return await res.json();
+  } catch(e) { console.warn('Sheets GET failed:', e); return null; }
+}
+
+async function sheetsPost(payload) {
+  if (!SHEETS_READY()) return null;
+  try {
+    const res = await fetch(SHEETS_URL, {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+    return await res.json();
+  } catch(e) { console.warn('Sheets POST failed:', e); return null; }
+}
+
+async function loadJobsRemote() {
+  const data = await sheetsGet('getJobs');
+  if (data && data.jobs && data.jobs.length > 0) {
+    localStorage.setItem('asc_jobs_v2', JSON.stringify(data.jobs));
+    return data.jobs;
+  }
+  return loadJobsLocal();
+}
+
+async function saveJobRemote(job) {
+  localStorage.setItem('asc_jobs_v2', JSON.stringify(
+    loadJobsLocal().map(j => j.id === job.id ? job : j)
+  ));
+  await sheetsPost({ action: 'saveJob', job });
+}
+
+async function saveAllJobsRemote(jobs) {
+  localStorage.setItem('asc_jobs_v2', JSON.stringify(jobs));
+  await sheetsPost({ action: 'saveJobs', jobs });
+}
+
+async function loadMileageRemote() {
+  const data = await sheetsGet('getMileage');
+  if (data && data.entries) {
+    localStorage.setItem('asc_mileage', JSON.stringify(data.entries));
+    return data.entries;
+  }
+  return loadMileageLocal();
+}
+
+async function saveMileageRemote(entries) {
+  localStorage.setItem('asc_mileage', JSON.stringify(entries));
+  await sheetsPost({ action: 'saveAllMileage', entries });
+}
+
+function loadJobsLocal()   { try { const d=localStorage.getItem('asc_jobs_v2'); return d?JSON.parse(d):SAMPLE_JOBS; } catch { return SAMPLE_JOBS; } }
+function loadMileageLocal(){ try { const d=localStorage.getItem('asc_mileage'); return d?JSON.parse(d):SAMPLE_MILEAGE; } catch { return SAMPLE_MILEAGE; } }
+function loadJobs()    { return loadJobsLocal(); }
+function saveJobs(j)   { localStorage.setItem('asc_jobs_v2',JSON.stringify(j)); if(SHEETS_READY()) sheetsPost({action:'saveJobs',jobs:j}); }
+function loadMileage() { return loadMileageLocal(); }
+function saveMileage(m){ localStorage.setItem('asc_mileage',JSON.stringify(m)); if(SHEETS_READY()) sheetsPost({action:'saveAllMileage',entries:m}); }
+
+// ── EMAILJS NOTIFICATION ──
+async function sendCrewNotification({ jobId, jobCustomer, crewName, msgType, msgText, extraCharge }) {
+  if (!EMAILJS_READY()) { console.log('EmailJS not configured — skipping notification'); return; }
+  try {
+    await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+      to_email:    ADMIN_EMAIL,
+      to_name:     'Jason',
+      from_name:   crewName,
+      job_id:      jobId,
+      customer:    jobCustomer,
+      msg_type:    msgType || 'Message',
+      message:     msgText,
+      extra_charge: extraCharge ? '$' + Number(extraCharge).toFixed(2) : 'N/A',
+      reply_url:   window.location.href,
+      subject:     `[${jobId}] ${msgType || 'Message'} from ${crewName} — ${jobCustomer}`
+    }, EMAILJS_PUBLIC_KEY);
+    console.log('Email notification sent');
+  } catch(e) { console.warn('EmailJS error:', e); }
+}
+function nextJobId(jobs){const nums=jobs.map(j=>parseInt(j.id.replace('JOB-',''))||0);return'JOB-'+String((Math.max(0,...nums)+1)).padStart(3,'0');}
+
+// ── HELPERS ──
+function badgeClass(s){return'badge badge-'+(STATUS_CLASS[s]||'new');}
+function statusBarClass(s){return'job-status-bar status-'+(STATUS_CLASS[s]||'new');}
+function userById(id){return USERS.find(u=>u.id===id);}
+function fmtDate(d){if(!d)return'—';const dt=new Date(d+'T00:00:00');return dt.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});}
+function fmtMoney(n){return'$'+Number(n||0).toFixed(2);}
+function fmtTime(ts){if(!ts)return'—';return new Date(ts).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});}
+function fmtHours(ms){if(!ms||ms<0)return'0h 0m';const h=Math.floor(ms/3600000);const m=Math.floor((ms%3600000)/60000);return h+'h '+m+'m';}
+function calcHours(entries){return entries.reduce((s,e)=>{if(e.clockIn&&e.clockOut)return s+(new Date(e.clockOut)-new Date(e.clockIn));return s;},0);}
+function invoiceTotal(lines){return(lines||[]).reduce((s,l)=>s+(l.qty||0)*(l.price||0),0);}
+function unreadCount(jobs,userId){return jobs.reduce((s,j)=>s+(j.messages||[]).filter(m=>!m.isAdmin&&!m.read).length,0);}
+function hasPendingCO(jobs){return jobs.some(j=>(j.changeOrders||[]).some(co=>co.status==='pending'));}
+
+// ── TOAST ──
+function Toast({msg}){return React.createElement('div',{className:'toast'},'✓  '+msg);}
+
+// ── LOGIN ──
+function Login({onLogin}){
+  const [u,setU]=useState('');const [p,setP]=useState('');const [err,setErr]=useState('');
+  function attempt(){const user=USERS.find(x=>x.username===u.trim().toLowerCase()&&x.password===p);if(user)onLogin(user);else setErr('Invalid username or password.');}
+  return React.createElement('div',{className:'login-wrap'},
+    React.createElement('div',{className:'login-card'},
+      React.createElement('div',{className:'login-logo'},
+        React.createElement('img',{src:'https://www.atlanticsafe.com/uploads/2/3/8/2/23820942/published/atlantic-safe-co-logo-wht-bg.gif',alt:'ASC'}),
+        React.createElement('h1',null,'Dispatch'),
+        React.createElement('p',null,'Crew Management System')
+      ),
+      err&&React.createElement('div',{className:'error-msg'},err),
+      React.createElement('div',{className:'form-group'},React.createElement('label',null,'Username'),React.createElement('input',{value:u,onChange:e=>setU(e.target.value),onKeyDown:e=>e.key==='Enter'&&attempt(),placeholder:'Enter username',autoFocus:true})),
+      React.createElement('div',{className:'form-group'},React.createElement('label',null,'Password'),React.createElement('input',{type:'password',value:p,onChange:e=>setP(e.target.value),onKeyDown:e=>e.key==='Enter'&&attempt(),placeholder:'Enter password'})),
+      React.createElement('button',{className:'btn btn-gold btn-full',onClick:attempt},'Sign In'),
+      React.createElement('p',{style:{fontSize:'11px',color:'var(--muted)',textAlign:'center',marginTop:'16px',lineHeight:'1.6'}},'Admin: owner/atlantic2024 • Crew: mike/crew1234')
+    )
+  );
+}
+
+// ── PIPELINE ──
+function Pipeline({status,onChange,isAdmin,isCrewLead}){
+  const idx=STATUS_PIPELINE.indexOf(status);
+  const crewAllowed=['En Route','On Site','Complete'];
+  return React.createElement('div',null,
+    React.createElement('div',{style:{fontSize:'11px',color:'var(--muted)',letterSpacing:'1px',textTransform:'uppercase',marginBottom:'8px'}},'Job Status'),
+    React.createElement('div',{className:'pipeline'},
+      STATUS_PIPELINE.map((s,i)=>{
+        const canClick=isAdmin||(isCrewLead&&crewAllowed.includes(s));
+        return[
+          i>0&&React.createElement('div',{key:'l'+i,className:'pipe-line'+(i<=idx?' done':'')}),
+          React.createElement('div',{key:'s'+i,className:'pipe-step-wrap'},
+            React.createElement('div',{className:'pipe-dot'+(i<idx?' done':i===idx?' active':''),onClick:()=>canClick&&onChange&&onChange(s),style:{cursor:canClick?'pointer':'default'}},i<idx?'✓':i+1),
+            React.createElement('div',{className:'pipe-label'},s)
+          )
+        ];
+      })
+    )
+  );
+}
+
+// ── GEOCODE HELPER ──
+async function geocodeAddress(address) {
+  try {
+    const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?access_token=${MAPBOX_TOKEN}&country=US&proximity=${BASE_LOCATION.coords.join(',')}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    if (data.features && data.features.length > 0) return data.features[0].center;
+  } catch (e) {}
+  return null;
+}
+
+// ── MAP COMPONENT ──
+function JobMap({jobs, selectedJobId}) {
+  const mapRef = useRef(null);
+  const mapInstanceRef = useRef(null);
+  const [resolvedJobs, setResolvedJobs] = useState(jobs);
+
+  useEffect(() => {
+    // Geocode any jobs missing coords
+    async function resolveCoords() {
+      const updated = await Promise.all(jobs.map(async j => {
+        if (j.deliveryCoords) return j;
+        if (!j.deliveryAddr) return j;
+        const coords = await geocodeAddress(j.deliveryAddr);
+        return coords ? { ...j, deliveryCoords: coords } : j;
+      }));
+      setResolvedJobs(updated);
+    }
+    resolveCoords();
+  }, [jobs.map(j => j.id + j.deliveryAddr).join(',')]);
+
+  useEffect(() => {
+    if (!mapRef.current) return;
+    if (mapInstanceRef.current) { mapInstanceRef.current.remove(); mapInstanceRef.current = null; }
+
+    mapboxgl.accessToken = MAPBOX_TOKEN;
+
+    const map = new mapboxgl.Map({
+      container: mapRef.current,
+      style: 'mapbox://styles/mapbox/dark-v11',
+      center: BASE_LOCATION.coords,
+      zoom: 10
+    });
+
+    mapInstanceRef.current = map;
+
+    map.on('load', () => {
+      map.addControl(new mapboxgl.NavigationControl(), 'top-right');
+
+      // Base marker — gold house pin
+      const baseEl = document.createElement('div');
+      baseEl.style.cssText = 'width:32px;height:32px;border-radius:50%;background:#c8922a;border:3px solid #fff;display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.5);';
+      baseEl.textContent = '🏠';
+      new mapboxgl.Marker({ element: baseEl })
+        .setLngLat(BASE_LOCATION.coords)
+        .setPopup(new mapboxgl.Popup({ offset: 20 }).setHTML('<div style="font-size:12px;font-weight:700;color:#141413;">Base — 4920 Christensen Rd<br>Ft. Pierce, FL 34981</div>'))
+        .addTo(map);
+
+      const jobsWithCoords = resolvedJobs.filter(j => j.deliveryCoords);
+      const allCoords = [BASE_LOCATION.coords, ...jobsWithCoords.map(j => j.deliveryCoords)];
+
+      // Numbered job stop markers
+      jobsWithCoords.forEach((j, i) => {
+        const isSelected = j.id === selectedJobId;
+        const el = document.createElement('div');
+        el.style.cssText = `width:30px;height:30px;border-radius:50%;background:${isSelected ? '#c8922a' : '#3498db'};border:2px solid #fff;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.4);`;
+        el.textContent = i + 1;
+        new mapboxgl.Marker({ element: el })
+          .setLngLat(j.deliveryCoords)
+          .setPopup(new mapboxgl.Popup({ offset: 20 }).setHTML(
+            `<div style="font-size:12px;color:#141413;line-height:1.6;">
+              <strong>${j.id}</strong> — <span class="badge">${j.status}</span><br>
+              <strong>${j.customer}</strong><br>
+              📍 ${j.deliveryAddr}<br>
+              🔒 ${j.safeType || 'Safe'}${j.weight ? ' · ' + j.weight : ''}
+              ${j.estimatedMiles ? '<br>~' + j.estimatedMiles + ' mi from base' : ''}
+            </div>`
+          ))
+          .addTo(map);
+      });
+
+      // Dashed gold route line: base → stop 1 → stop 2 → ...
+      if (jobsWithCoords.length > 0) {
+        map.addSource('route', {
+          type: 'geojson',
+          data: { type: 'Feature', geometry: { type: 'LineString', coordinates: allCoords } }
+        });
+        map.addLayer({
+          id: 'route-line',
+          type: 'line',
+          source: 'route',
+          paint: { 'line-color': '#c8922a', 'line-width': 2.5, 'line-dasharray': [3, 3], 'line-opacity': 0.8 }
+        });
+      }
+
+      // Fit map to all points
+      if (allCoords.length > 1) {
+        const bounds = allCoords.reduce((b, c) => b.extend(c), new mapboxgl.LngLatBounds(allCoords[0], allCoords[0]));
+        map.fitBounds(bounds, { padding: 70 });
+      }
+    });
+
+    return () => { if (mapInstanceRef.current) { mapInstanceRef.current.remove(); mapInstanceRef.current = null; } };
+  }, [resolvedJobs.map(j => j.id + (j.deliveryCoords || '')).join(','), selectedJobId]);
+
+  return React.createElement('div', { className: 'map-container' },
+    React.createElement('div', { ref: mapRef, style: { height: '320px', width: '100%' } })
+  );
+}
+
+// ── MESSAGING PANEL ──
+function MessagingPanel({job,currentUser,onSendMessage,onMarkRead}){
+  const [text,setText]=useState('');
+  const [type,setType]=useState('General Note');
+  const [charge,setCharge]=useState('');
+  const threadRef=useRef(null);
+  const isAdmin=currentUser.role==='admin';
+  const msgs=job.messages||[];
+  useEffect(()=>{if(threadRef.current)threadRef.current.scrollTop=threadRef.current.scrollHeight;},[msgs.length]);
+  useEffect(()=>{if(isAdmin)onMarkRead(job.id);},[]);
+  function send(){
+    if(!text.trim())return;
+    const msg={
+      id:'m'+Date.now(),from:currentUser.id,type:isAdmin?null:type,
+      text:text.trim(),ts:new Date().toISOString(),isAdmin,read:false,
+      extraCharge:type==='Extra Charge'&&charge?Number(charge):null
+    };
+    onSendMessage(job.id,msg);
+    // Fire email notification to admin when crew sends a message
+    if(!isAdmin){
+      sendCrewNotification({
+        jobId:      job.id,
+        jobCustomer:job.customer,
+        crewName:   currentUser.name,
+        msgType:    type,
+        msgText:    text.trim(),
+        extraCharge:msg.extraCharge
+      });
+    }
+    setText('');setCharge('');
+  }
+  function typeBadgeClass(t){
+    if(!t)return'';
+    if(t==='Change Order')return'msg-type-badge msg-change-order';
+    if(t==='Extra Charge')return'msg-type-badge msg-charge';
+    if(t==='General Note')return'msg-type-badge msg-general';
+    return'msg-type-badge msg-note';
+  }
+  return React.createElement('div',null,
+    React.createElement('div',{className:'msg-thread',ref:threadRef},
+      msgs.length===0&&React.createElement('div',{style:{textAlign:'center',color:'var(--muted)',fontSize:'13px',padding:'20px'}},'No messages yet. Crew can send notes, change orders, and charge updates here.'),
+      msgs.map(m=>React.createElement('div',{key:m.id,style:{alignSelf:m.isAdmin?'flex-end':'flex-start',maxWidth:'75%'}},
+        React.createElement('div',{className:'msg-meta',style:{textAlign:m.isAdmin?'right':'left'}},
+          (m.isAdmin?'Admin':'')+(m.isAdmin?'':userById(m.from)?.name||m.from)+' · '+fmtTime(m.ts)
+        ),
+        !m.isAdmin&&m.type&&React.createElement('div',{className:typeBadgeClass(m.type)},m.type+(m.extraCharge?' +'+fmtMoney(m.extraCharge):'')),
+        React.createElement('div',{className:'msg-bubble '+(m.isAdmin?'msg-admin':'msg-crew')},m.text)
+      ))
+    ),
+    React.createElement('div',{style:{borderTop:'1px solid var(--border)',paddingTop:'12px'}},
+      !isAdmin&&React.createElement('div',{style:{display:'flex',gap:'8px',marginBottom:'8px',flexWrap:'wrap'}},
+        MSG_TYPES.map(t=>React.createElement('button',{key:t,onClick:()=>setType(t),style:{padding:'4px 10px',borderRadius:'20px',fontSize:'11px',fontWeight:'600',cursor:'pointer',border:'1px solid '+(type===t?'var(--gold)':'var(--border)'),background:type===t?'rgba(200,146,42,.15)':'var(--navy-light)',color:type===t?'var(--gold)':'var(--muted)',transition:'all .15s'}},t))
+      ),
+      !isAdmin&&type==='Extra Charge'&&React.createElement('div',{style:{marginBottom:'8px'}},
+        React.createElement('input',{className:'inp',placeholder:'Extra charge amount $',value:charge,onChange:e=>setCharge(e.target.value),type:'number',style:{width:'180px'}})
+      ),
+      React.createElement('div',{className:'msg-input-row'},
+        React.createElement('textarea',{className:'msg-textarea',placeholder:isAdmin?'Reply to crew...':'Send note, change order, or charge info to admin...',value:text,onChange:e=>setText(e.target.value),onKeyDown:e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}}}),
+        React.createElement('button',{className:'btn btn-gold',onClick:send,style:{flexShrink:0}},'Send')
+      ),
+      React.createElement('p',{style:{fontSize:'10px',color:'var(--muted)',marginTop:'6px'}},'Enter to send • Shift+Enter for new line'+(!isAdmin?' • Admin notified via SMS':' • Crew sees your reply in-app'))
+    )
+  );
+}
+
+// ── HOURS PANEL ──
+function HoursPanel({job,currentUser,onUpdateTimeEntry}){
+  const isAdmin=currentUser.role==='admin';
+  const entries=job.timeEntries||[];
+  const crewIds=[...new Set([...job.crew,...entries.map(e=>e.crewId)])];
+  function clockIn(crewId){
+    const newEntry={crewId,clockIn:new Date().toISOString(),clockOut:null};
+    onUpdateTimeEntry(job.id,[...entries,newEntry]);
+  }
+  function clockOut(crewId){
+    const updated=entries.map(e=>e.crewId===crewId&&!e.clockOut?{...e,clockOut:new Date().toISOString()}:e);
+    onUpdateTimeEntry(job.id,updated);
+  }
+  const isClockedIn=(crewId)=>entries.some(e=>e.crewId===crewId&&!e.clockOut);
+  const totalHoursMs=(crewId)=>entries.filter(e=>e.crewId===crewId).reduce((s,e)=>{
+    if(e.clockIn&&e.clockOut)return s+(new Date(e.clockOut)-new Date(e.clockIn));
+    if(e.clockIn&&!e.clockOut)return s+(Date.now()-new Date(e.clockIn));
+    return s;
+  },0);
+  const allTotalMs=crewIds.reduce((s,id)=>s+totalHoursMs(id),0);
+  return React.createElement('div',null,
+    React.createElement('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'14px'}},
+      React.createElement('div',{className:'section-title',style:{marginBottom:0}},'Hours Tracking'),
+      React.createElement('div',{style:{fontSize:'13px',color:'var(--gold)',fontWeight:'700'}},'Total: '+fmtHours(allTotalMs))
+    ),
+    React.createElement('table',{className:'hours-table'},
+      React.createElement('thead',null,React.createElement('tr',null,
+        React.createElement('th',null,'Crew Member'),
+        React.createElement('th',null,'Clock In'),
+        React.createElement('th',null,'Clock Out'),
+        React.createElement('th',null,'Hours'),
+        !isAdmin&&React.createElement('th',null,'Action')
+      )),
+      React.createElement('tbody',null,
+        crewIds.map(crewId=>{
+          const user=userById(crewId);
+          const latestEntry=entries.filter(e=>e.crewId===crewId).slice(-1)[0];
+          const clockedIn=isClockedIn(crewId);
+          const hrs=totalHoursMs(crewId);
+          const canControl=!isAdmin&&(currentUser.id===crewId||currentUser.role==='crew_lead');
+          return React.createElement('tr',{key:crewId},
+            React.createElement('td',null,React.createElement('div',{style:{display:'flex',alignItems:'center',gap:'8px'}},
+              React.createElement('div',{className:'user-avatar',style:{width:'28px',height:'28px',fontSize:'11px'}},user?.initials||'?'),
+              user?.name||crewId
+            )),
+            React.createElement('td',null,fmtTime(latestEntry?.clockIn)),
+            React.createElement('td',null,latestEntry?.clockOut?fmtTime(latestEntry.clockOut):clockedIn?React.createElement('span',{className:'time-running'},'● Active'):React.createElement('span',{style:{color:'var(--muted)'}},'—')),
+            React.createElement('td',null,React.createElement('span',{style:{color:hrs>0?'var(--gold)':'var(--muted)',fontFamily:'DM Mono',fontSize:'12px'}},fmtHours(hrs))),
+            !isAdmin&&React.createElement('td',null,
+              canControl&&(clockedIn
+                ?React.createElement('button',{className:'clock-btn clock-out',onClick:()=>clockOut(crewId)},'Clock Out')
+                :React.createElement('button',{className:'clock-btn clock-in',onClick:()=>clockIn(crewId)},'Clock In')
+              )
+            )
+          );
+        })
+      )
+    )
+  );
+}
+
+// ── CHANGE ORDERS PANEL ──
+function ChangeOrdersPanel({job,currentUser,onUpdateCO}){
+  const isAdmin=currentUser.role==='admin';
+  const cos=job.changeOrders||[];
+  const pending=cos.filter(c=>c.status==='pending');
+  function approve(id){onUpdateCO(job.id,cos.map(c=>c.id===id?{...c,status:'approved'}:c));}
+  function decline(id){onUpdateCO(job.id,cos.map(c=>c.id===id?{...c,status:'declined'}:c));}
+  if(cos.length===0)return React.createElement('div',{style:{color:'var(--muted)',fontSize:'13px',textAlign:'center',padding:'16px'}},'No change orders on this job.');
+  return React.createElement('div',null,
+    pending.length>0&&isAdmin&&React.createElement('div',{style:{background:'rgba(230,126,34,.1)',border:'1px solid rgba(230,126,34,.3)',borderRadius:'8px',padding:'10px 14px',marginBottom:'14px',fontSize:'12px',color:'#e67e22'}},
+      '⚠ '+pending.length+' pending change order'+(pending.length>1?'s':'')+' require your review'
+    ),
+    cos.map(co=>React.createElement('div',{key:co.id,className:'co-card'},
+      React.createElement('div',{className:'co-header'},
+        React.createElement('div',{className:'co-title'},co.desc),
+        React.createElement('div',{style:{display:'flex',alignItems:'center',gap:'10px'}},
+          co.amount>0&&React.createElement('div',{className:'co-amount'},'+'+fmtMoney(co.amount)),
+          React.createElement('span',{className:'badge '+(co.status==='pending'?'badge-enroute':co.status==='approved'?'badge-complete':'badge-urgent')},co.status)
+        )
+      ),
+      React.createElement('div',{className:'co-desc'},'Submitted by '+userById(co.by)?.name+' · '+fmtTime(co.ts)),
+      isAdmin&&co.status==='pending'&&React.createElement('div',{style:{display:'flex',gap:'8px',marginTop:'10px'}},
+        React.createElement('button',{className:'btn btn-green',style:{fontSize:'12px',padding:'7px 14px'},onClick:()=>approve(co.id)},'✓ Approve'),
+        React.createElement('button',{className:'btn btn-danger',style:{fontSize:'12px',padding:'7px 14px'},onClick:()=>decline(co.id)},'✗ Decline')
+      )
+    ))
+  );
+}
+
+// ── JOB FORM MODAL ──
+function JobFormModal({job,onSave,onClose,currentUser}){
+  const isEdit=!!job;
+  const [form,setForm]=useState(job?{...job}:{
+    customer:'',phone:'',email:'',safeType:'',weight:'',safeSize:'',
+    pickupAddr:'',deliveryAddr:'',date:'',time:'',
+    crew:[],vehicle:'Truck #1',trailer:'None',notes:'',
+    status:'New',photos:[],invoiceLines:[],paid:false,
+    messages:[],changeOrders:[],timeEntries:[],estimatedMiles:'',actualMiles:null
+  });
+  function set(k,v){setForm(f=>({...f,[k]:v}));}
+  function toggleCrew(id){setForm(f=>({...f,crew:f.crew.includes(id)?f.crew.filter(c=>c!==id):[...f.crew,id]}));}
+  function handleSave(){
+    if(!form.customer||!form.deliveryAddr||!form.date)return alert('Customer, delivery address, and date are required.');
+    onSave(form);
+  }
+  const crewUsers=USERS.filter(u=>u.role!=='admin');
+  return React.createElement('div',{className:'modal-bg',onClick:e=>{if(e.target===e.currentTarget)onClose();}},
+    React.createElement('div',{className:'modal'},
+      React.createElement('div',{className:'modal-header'},
+        React.createElement('h2',{className:'modal-title'},isEdit?'Edit Job Order':'New Job Order'),
+        React.createElement('button',{className:'modal-close',onClick:onClose},'×')
+      ),
+      React.createElement('p',{className:'section-title'},'Customer Info'),
+      React.createElement('div',{className:'form-row'},
+        React.createElement('div',{className:'form-group'},React.createElement('label',null,'Customer Name *'),React.createElement('input',{value:form.customer,onChange:e=>set('customer',e.target.value),placeholder:'Full name'})),
+        React.createElement('div',{className:'form-group'},React.createElement('label',null,'Phone'),React.createElement('input',{value:form.phone,onChange:e=>set('phone',e.target.value),placeholder:'772-555-0000'}))
+      ),
+      React.createElement('div',{className:'form-group'},React.createElement('label',null,'Email'),React.createElement('input',{type:'email',value:form.email,onChange:e=>set('email',e.target.value),placeholder:'customer@email.com'})),
+      React.createElement('hr',{className:'section-divider'}),
+      React.createElement('p',{className:'section-title'},'Safe Details'),
+      React.createElement('div',{className:'form-row-3'},
+        React.createElement('div',{className:'form-group'},React.createElement('label',null,'Safe Type / Model'),React.createElement('input',{value:form.safeType,onChange:e=>set('safeType',e.target.value),placeholder:'e.g. Liberty Presidential 50'})),
+        React.createElement('div',{className:'form-group'},React.createElement('label',null,'Weight'),React.createElement('input',{value:form.weight,onChange:e=>set('weight',e.target.value),placeholder:'600 lbs'})),
+        React.createElement('div',{className:'form-group'},React.createElement('label',null,'Dimensions'),React.createElement('input',{value:form.safeSize,onChange:e=>set('safeSize',e.target.value),placeholder:'H×W×D'}))
+      ),
+      React.createElement('hr',{className:'section-divider'}),
+      React.createElement('p',{className:'section-title'},'Addresses'),
+      React.createElement('div',{className:'form-group'},React.createElement('label',null,'Pickup Address'),React.createElement('input',{value:form.pickupAddr,onChange:e=>set('pickupAddr',e.target.value),placeholder:'Street, City, FL ZIP'})),
+      React.createElement('div',{className:'form-group'},React.createElement('label',null,'Delivery Address *'),React.createElement('input',{value:form.deliveryAddr,onChange:e=>set('deliveryAddr',e.target.value),placeholder:'Street, City, FL ZIP'})),
+      React.createElement('hr',{className:'section-divider'}),
+      React.createElement('p',{className:'section-title'},'Schedule & Equipment'),
+      React.createElement('div',{className:'form-row-3'},
+        React.createElement('div',{className:'form-group'},React.createElement('label',null,'Date *'),React.createElement('input',{type:'date',value:form.date,onChange:e=>set('date',e.target.value)})),
+        React.createElement('div',{className:'form-group'},React.createElement('label',null,'Time'),React.createElement('input',{type:'time',value:form.time,onChange:e=>set('time',e.target.value)})),
+        React.createElement('div',{className:'form-group'},React.createElement('label',null,'Est. Miles'),React.createElement('input',{type:'number',value:form.estimatedMiles,onChange:e=>set('estimatedMiles',e.target.value),placeholder:'~miles from base'}))
+      ),
+      React.createElement('div',{className:'form-row'},
+        React.createElement('div',{className:'form-group'},React.createElement('label',null,'Trailer'),React.createElement('select',{value:form.trailer,onChange:e=>set('trailer',e.target.value)},TRAILERS.map(t=>React.createElement('option',{key:t,value:t},t)))),
+        React.createElement('div',{className:'form-group'},React.createElement('label',null,'Vehicle'),React.createElement('input',{value:form.vehicle||'Truck #1',onChange:e=>set('vehicle',e.target.value)}))
+      ),
+      React.createElement('div',{className:'form-group'},
+        React.createElement('label',null,'Assign Crew'),
+        React.createElement('div',{style:{display:'flex',flexWrap:'wrap',gap:'8px',marginTop:'4px'}},
+          crewUsers.map(u=>React.createElement('label',{key:u.id,style:{display:'flex',alignItems:'center',gap:'6px',cursor:'pointer',fontSize:'13px',padding:'6px 12px',background:form.crew.includes(u.id)?'rgba(200,146,42,.15)':'var(--navy-light)',borderRadius:'8px',border:'1px solid '+(form.crew.includes(u.id)?'var(--gold)':'var(--border)'),transition:'all .15s'}},
+            React.createElement('input',{type:'checkbox',checked:form.crew.includes(u.id),onChange:()=>toggleCrew(u.id),style:{accentColor:'var(--gold)'}}),
+            u.name,u.role==='crew_lead'?' ⭐':''
+          ))
+        )
+      ),
+      React.createElement('hr',{className:'section-divider'}),
+      React.createElement('div',{className:'form-group'},React.createElement('label',null,'Special Notes'),React.createElement('textarea',{value:form.notes,onChange:e=>set('notes',e.target.value),placeholder:'Stairs, tight spaces, parking, pets, access codes...'})),
+      React.createElement('div',{className:'modal-actions'},
+        React.createElement('button',{className:'btn btn-outline',onClick:onClose},'Cancel'),
+        React.createElement('button',{className:'btn btn-gold',onClick:handleSave},isEdit?'Save Changes':'Create Job Order')
+      )
+    )
+  );
+}
+
+// ── INVOICE MODAL ──
+function InvoiceModal({job,onSave,onClose,onSend}){
+  const [lines,setLines]=useState(job.invoiceLines&&job.invoiceLines.length?[...job.invoiceLines]:[]);
+  const [sendTo,setSendTo]=useState('email');
+  const [preview,setPreview]=useState(false);
+  const approvedCOs=(job.changeOrders||[]).filter(co=>co.status==='approved');
+  const total=invoiceTotal(lines)+approvedCOs.reduce((s,co)=>s+co.amount,0);
+  function addLine(){setLines(l=>[...l,{serviceId:'s1',desc:SERVICES[0].name,qty:1,price:SERVICES[0].price}]);}
+  function removeLine(i){setLines(l=>l.filter((_,idx)=>idx!==i));}
+  if(preview)return React.createElement('div',{className:'modal-bg',onClick:e=>{if(e.target===e.currentTarget)onClose();}},
+    React.createElement('div',{className:'modal modal-wide'},
+      React.createElement('div',{className:'modal-header'},React.createElement('h2',{className:'modal-title'},'Invoice Preview'),React.createElement('button',{className:'modal-close',onClick:onClose},'×')),
+      React.createElement('div',{className:'invoice-preview'},
+        React.createElement('div',{className:'inv-header'},
+          React.createElement('div',null,React.createElement('div',{className:'inv-title'},'INVOICE'),React.createElement('div',{style:{fontSize:'13px',color:'#333',marginTop:'6px',fontWeight:'600'}},'Atlantic Safe Company'),React.createElement('div',{style:{fontSize:'12px',color:'#666'}},'772-204-9055 • atlanticsafe.com')),
+          React.createElement('div',{className:'inv-meta'},'Invoice #: '+job.id+'-INV',React.createElement('br'),'Date: '+new Date().toLocaleDateString(),React.createElement('br'),React.createElement('br'),React.createElement('strong',null,'Bill To:'),React.createElement('br'),job.customer,React.createElement('br'),job.phone,React.createElement('br'),job.email)
+        ),
+        React.createElement('div',{style:{fontSize:'12px',color:'#666',marginBottom:'8px'}},'Service Address: '+job.deliveryAddr),
+        React.createElement('table',{className:'inv-table'},
+          React.createElement('thead',null,React.createElement('tr',null,React.createElement('th',null,'Description'),React.createElement('th',null,'Qty'),React.createElement('th',{style:{textAlign:'right'}},'Price'),React.createElement('th',{style:{textAlign:'right'}},'Total'))),
+          React.createElement('tbody',null,
+            lines.map((l,i)=>React.createElement('tr',{key:i},React.createElement('td',null,l.desc),React.createElement('td',null,l.qty),React.createElement('td',{style:{textAlign:'right'}},fmtMoney(l.price)),React.createElement('td',{style:{textAlign:'right'}},fmtMoney((l.qty||0)*(l.price||0))))),
+            approvedCOs.map(co=>React.createElement('tr',{key:co.id},React.createElement('td',null,'Change Order: '+co.desc),React.createElement('td',null,'1'),React.createElement('td',{style:{textAlign:'right'}},fmtMoney(co.amount)),React.createElement('td',{style:{textAlign:'right'}},fmtMoney(co.amount)))),
+            React.createElement('tr',null,React.createElement('td',{colSpan:3,style:{textAlign:'right',fontWeight:'700',paddingTop:'12px'}},'TOTAL DUE'),React.createElement('td',{style:{textAlign:'right',fontWeight:'700',paddingTop:'12px',fontSize:'16px'}},fmtMoney(total)))
+          )
+        ),
+        React.createElement('div',{className:'inv-footer'},'Thank you for choosing Atlantic Safe Company! • atlanticsafe.com • 772-204-9055')
+      ),
+      React.createElement('div',{className:'modal-actions'},
+        React.createElement('button',{className:'btn btn-outline',onClick:()=>setPreview(false)},'← Edit'),
+        React.createElement('button',{className:'btn btn-gold',onClick:()=>{onSend(lines,sendTo);onSave(lines);onClose();}},sendTo==='email'?'📧 Email Invoice':'💬 Text Invoice Link')
+      )
+    )
+  );
+  return React.createElement('div',{className:'modal-bg',onClick:e=>{if(e.target===e.currentTarget)onClose();}},
+    React.createElement('div',{className:'modal'},
+      React.createElement('div',{className:'modal-header'},React.createElement('h2',{className:'modal-title'},'Invoice — '+job.customer),React.createElement('button',{className:'modal-close',onClick:onClose},'×')),
+      React.createElement('p',{className:'section-title'},'Line Items'),
+      lines.map((l,i)=>React.createElement('div',{key:i,className:'invoice-line'},
+        React.createElement('select',{style:{background:'var(--navy-light)',border:'1px solid var(--border)',borderRadius:'6px',color:'var(--off-white)',fontFamily:'DM Sans',fontSize:'13px',padding:'8px'},value:l.serviceId,onChange:e=>{const svc=SERVICES.find(s=>s.id===e.target.value);setLines(ln=>ln.map((x,idx)=>idx===i?{...x,serviceId:svc?.id||'',desc:svc?.name||x.desc,price:svc?.price||x.price}:x));}},
+          SERVICES.map(s=>React.createElement('option',{key:s.id,value:s.id},s.name))
+        ),
+        React.createElement('input',{style:{background:'var(--navy-light)',border:'1px solid var(--border)',borderRadius:'6px',color:'var(--off-white)',fontFamily:'DM Sans',fontSize:'13px',padding:'8px',width:'100%'},type:'number',value:l.qty,min:0,onChange:e=>setLines(ln=>ln.map((x,idx)=>idx===i?{...x,qty:Number(e.target.value)}:x))}),
+        React.createElement('input',{style:{background:'var(--navy-light)',border:'1px solid var(--border)',borderRadius:'6px',color:'var(--off-white)',fontFamily:'DM Sans',fontSize:'13px',padding:'8px',width:'100%'},type:'number',value:l.price,min:0,onChange:e=>setLines(ln=>ln.map((x,idx)=>idx===i?{...x,price:Number(e.target.value)}:x))}),
+        React.createElement('button',{onClick:()=>removeLine(i),style:{background:'none',border:'none',color:'var(--muted)',fontSize:'18px',cursor:'pointer'}},'×')
+      )),
+      approvedCOs.length>0&&React.createElement('div',{style:{background:'rgba(39,174,96,.08)',border:'1px solid rgba(39,174,96,.2)',borderRadius:'8px',padding:'10px 14px',marginBottom:'12px',fontSize:'12px',color:'#58d68d'}},
+        '✓ '+approvedCOs.length+' approved change order'+(approvedCOs.length>1?'s':'')+' will be added: +'+fmtMoney(approvedCOs.reduce((s,co)=>s+co.amount,0))
+      ),
+      React.createElement('button',{className:'btn btn-outline',onClick:addLine,style:{marginBottom:'12px'}},'+ Add Line Item'),
+      React.createElement('div',{className:'invoice-total'},'Total: '+fmtMoney(total)),
+      React.createElement('hr',{className:'section-divider'}),
+      React.createElement('p',{className:'section-title'},'Send To Customer'),
+      React.createElement('div',{style:{display:'flex',gap:'10px',marginBottom:'14px'}},
+        ['email','sms'].map(m=>React.createElement('label',{key:m,style:{display:'flex',alignItems:'center',gap:'6px',cursor:'pointer',fontSize:'13px',padding:'8px 14px',background:sendTo===m?'rgba(200,146,42,.15)':'var(--navy-light)',borderRadius:'8px',border:'1px solid '+(sendTo===m?'var(--gold)':'var(--border)'),transition:'all .15s'}},
+          React.createElement('input',{type:'radio',value:m,checked:sendTo===m,onChange:()=>setSendTo(m),style:{accentColor:'var(--gold)'}}),
+          m==='email'?'📧 Email ('+job.email+')':'💬 Text ('+job.phone+')'
+        ))
+      ),
+      React.createElement('div',{className:'modal-actions'},
+        React.createElement('button',{className:'btn btn-outline',onClick:onClose},'Cancel'),
+        React.createElement('button',{className:'btn btn-outline',onClick:()=>setPreview(true)},'Preview'),
+        React.createElement('button',{className:'btn btn-gold',onClick:()=>{onSave(lines);onClose();}},'💾 Save Invoice')
+      )
+    )
+  );
+}
+
+// ── JOB DETAIL MODAL ──
+function JobDetailModal({job,onClose,onStatusChange,onSave,currentUser,showToast}){
+  const isAdmin=currentUser.role==='admin';
+  const isCrewLead=currentUser.role==='crew_lead';
+  const [activeTab,setActiveTab]=useState('details');
+  const [showInvoice,setShowInvoice]=useState(false);
+  const [photoFiles,setPhotoFiles]=useState(job.photos||[]);
+  const fileRef=useRef();
+  const unread=(job.messages||[]).filter(m=>!m.isAdmin&&!m.read).length;
+  const pendingCOs=(job.changeOrders||[]).filter(co=>co.status==='pending').length;
+  function handlePhotoUpload(e){
+    [...e.target.files].forEach(f=>{
+      const r=new FileReader();
+      r.onload=(ev)=>setPhotoFiles(p=>[...p,{name:f.name,dataUrl:ev.target.result,uploadedBy:currentUser.name,ts:new Date().toISOString()}]);
+      r.readAsDataURL(f);
+    });
+  }
+  function savePhotos(){onSave({...job,photos:photoFiles});showToast('Photos saved');}
+  function handleMarkPaid(){onSave({...job,paid:true,status:'Paid'});showToast('Marked as Paid');}
+  function handleInvoiceSave(lines){onSave({...job,invoiceLines:lines,status:job.status==='Complete'?'Invoiced':job.status});showToast('Invoice saved');}
+  function handleSendInvoice(_,method){showToast(method==='email'?'Invoice emailed to '+job.email:'Invoice link texted to '+job.phone);}
+  function handleMessage(jobId,msg){onSave({...job,messages:[...(job.messages||[]),msg]});if(isAdmin)showToast('Message sent to crew');}
+  function handleMarkRead(jobId){onSave({...job,messages:(job.messages||[]).map(m=>({...m,read:true}))});}
+  function handleTimeEntry(jobId,entries){onSave({...job,timeEntries:entries});showToast('Time updated');}
+  function handleCOUpdate(jobId,cos){onSave({...job,changeOrders:cos});showToast('Change order updated');}
+  const crewNames=job.crew.map(id=>userById(id)?.name||id).join(', ');
+  const total=invoiceTotal(job.invoiceLines||[]);
+  const TABS=[
+    {id:'details',label:'Details'},
+    {id:'map',label:'📍 Map'},
+    {id:'hours',label:'⏱ Hours'},
+    {id:'messages',label:'💬 Messages'+(unread>0?' ('+unread+')':'')},
+    {id:'photos',label:'📷 Photos'},
+    ...(isAdmin?[{id:'invoice',label:'💼 Invoice'}]:[]),
+    ...(isAdmin||isCrewLead?[{id:'changeorders',label:'⚠ Changes'+(pendingCOs>0?' ('+pendingCOs+')':'')}]:[])
+  ];
+  return React.createElement('div',{className:'modal-bg',onClick:e=>{if(e.target===e.currentTarget)onClose();}},
+    React.createElement('div',{className:'modal modal-wide'},
+      React.createElement('div',{className:'modal-header'},
+        React.createElement('div',null,
+          React.createElement('div',{style:{display:'flex',alignItems:'center',gap:'10px',flexWrap:'wrap'}},
+            React.createElement('h2',{className:'modal-title'},job.id),
+            React.createElement('span',{className:badgeClass(job.status)},job.status),
+            job.paid&&React.createElement('span',{className:'badge badge-paid'},'PAID')
+          ),
+          React.createElement('div',{style:{fontSize:'13px',color:'var(--muted)',marginTop:'4px'}},job.customer+' · '+fmtDate(job.date)+(job.time?' @ '+job.time:''))
+        ),
+        React.createElement('button',{className:'modal-close',onClick:onClose},'×')
+      ),
+      React.createElement(Pipeline,{status:job.status,onChange:(s)=>{onStatusChange(job.id,s);showToast('Status → '+s);},isAdmin,isCrewLead}),
+      React.createElement('hr',{className:'section-divider'}),
+      React.createElement('div',{className:'tabs'},TABS.map(t=>React.createElement('div',{key:t.id,className:'tab'+(activeTab===t.id?' active':''),onClick:()=>setActiveTab(t.id)},t.label))),
+      // DETAILS TAB
+      activeTab==='details'&&React.createElement('div',null,
+        React.createElement('div',{className:'detail-grid',style:{marginBottom:'16px'}},
+          React.createElement('div',{className:'detail-item'},React.createElement('label',null,'Customer'),React.createElement('span',null,job.customer)),
+          React.createElement('div',{className:'detail-item'},React.createElement('label',null,'Phone'),React.createElement('span',null,job.phone||'—')),
+          React.createElement('div',{className:'detail-item'},React.createElement('label',null,'Safe Model'),React.createElement('span',null,job.safeType||'—')),
+          React.createElement('div',{className:'detail-item'},React.createElement('label',null,'Weight / Size'),React.createElement('span',null,(job.weight||'—')+' / '+(job.safeSize||'—')))
+        ),
+        React.createElement('div',{className:'detail-grid',style:{marginBottom:'16px'}},
+          React.createElement('div',{className:'detail-item'},React.createElement('label',null,'Pickup'),React.createElement('span',null,job.pickupAddr||'—')),
+          React.createElement('div',{className:'detail-item'},React.createElement('label',null,'Delivery'),React.createElement('span',null,job.deliveryAddr||'—'))
+        ),
+        React.createElement('div',{className:'detail-grid'},
+          React.createElement('div',{className:'detail-item'},React.createElement('label',null,'Crew'),React.createElement('span',null,crewNames||'Unassigned')),
+          React.createElement('div',{className:'detail-item'},React.createElement('label',null,'Trailer'),React.createElement('span',null,job.trailer||'None')),
+          React.createElement('div',{className:'detail-item'},React.createElement('label',null,'Est. Miles'),React.createElement('span',null,job.estimatedMiles?job.estimatedMiles+' mi':'—')),
+          React.createElement('div',{className:'detail-item'},React.createElement('label',null,'Actual Miles'),React.createElement('span',null,job.actualMiles?job.actualMiles+' mi':'—'))
+        ),
+        job.notes&&React.createElement('div',{style:{marginTop:'16px'}},React.createElement('p',{className:'section-title'},'Special Notes'),React.createElement('div',{className:'notes-box'},'⚠ '+job.notes))
+      ),
+      // MAP TAB
+      activeTab==='map'&&React.createElement('div',null,
+        React.createElement(JobMap,{jobs:[job],selectedJobId:job.id}),
+        React.createElement('div',{className:'map-stats'},
+          React.createElement('div',{className:'map-stat'},React.createElement('div',{className:'map-stat-val'},job.estimatedMiles||'—'),React.createElement('div',{className:'map-stat-lbl'},'Est. Miles')),
+          React.createElement('div',{className:'map-stat'},React.createElement('div',{className:'map-stat-val'},job.actualMiles||'—'),React.createElement('div',{className:'map-stat-lbl'},'Actual Miles')),
+          React.createElement('div',{className:'map-stat'},React.createElement('div',{className:'map-stat-val'},job.crew.length),React.createElement('div',{className:'map-stat-lbl'},'Crew Members'))
+        ),
+        isAdmin&&React.createElement('div',{style:{marginTop:'14px'}},
+          React.createElement('label',{style:{fontSize:'11px',color:'var(--muted)',textTransform:'uppercase',letterSpacing:'1px',fontWeight:'700',display:'block',marginBottom:'6px'}},'Update Actual Miles'),
+          React.createElement('div',{style:{display:'flex',gap:'10px',alignItems:'center'}},
+            React.createElement('input',{className:'inp',type:'number',placeholder:'Actual miles driven',defaultValue:job.actualMiles||'',style:{width:'180px'},onBlur:e=>onSave({...job,actualMiles:Number(e.target.value)})}),
+            React.createElement('span',{style:{fontSize:'12px',color:'var(--muted)'}})
+          )
+        )
+      ),
+      // HOURS TAB
+      activeTab==='hours'&&React.createElement(HoursPanel,{job,currentUser,onUpdateTimeEntry:handleTimeEntry}),
+      // MESSAGES TAB
+      activeTab==='messages'&&React.createElement(MessagingPanel,{job,currentUser,onSendMessage:handleMessage,onMarkRead:handleMarkRead}),
+      // PHOTOS TAB
+      activeTab==='photos'&&React.createElement('div',null,
+        React.createElement('div',{className:'photo-zone',onClick:()=>fileRef.current.click()},
+          React.createElement('p',null,'📷 Tap to add before/after photos'),
+          React.createElement('input',{ref:fileRef,type:'file',accept:'image/*',multiple:true,style:{display:'none'},onChange:handlePhotoUpload})
+        ),
+        photoFiles.length>0&&React.createElement('div',{className:'photo-grid'},
+          photoFiles.map((ph,i)=>React.createElement('div',{key:i,className:'photo-thumb'},
+            React.createElement('img',{src:ph.dataUrl,alt:'photo'}),
+            React.createElement('button',{className:'remove-photo',onClick:()=>setPhotoFiles(p=>p.filter((_,idx)=>idx!==i))},'×')
+          ))
+        ),
+        photoFiles.length>0&&React.createElement('button',{className:'btn btn-outline',style:{marginTop:'12px'},onClick:savePhotos},'Save Photos'),
+        photoFiles.length===0&&React.createElement('div',{style:{textAlign:'center',padding:'20px',color:'var(--muted)',fontSize:'13px'}},'No photos yet. Add before/after shots to document the job.')
+      ),
+      // INVOICE TAB (admin only)
+      isAdmin&&activeTab==='invoice'&&React.createElement('div',null,
+        React.createElement('div',{style:{display:'flex',alignItems:'center',gap:'14px',flexWrap:'wrap',marginBottom:'16px'}},
+          React.createElement('button',{className:'btn btn-gold',onClick:()=>setShowInvoice(true)},job.invoiceLines&&job.invoiceLines.length?'Edit Invoice':'Build Invoice'),
+          job.invoiceLines&&job.invoiceLines.length>0&&React.createElement('span',{style:{fontSize:'14px',color:'var(--gold)',fontWeight:'700'}},'Total: '+fmtMoney(total)),
+          job.invoiceLines&&job.invoiceLines.length>0&&!job.paid&&React.createElement('button',{className:'btn btn-green',onClick:handleMarkPaid},'✓ Mark Paid'),
+          job.paid&&React.createElement('span',{className:'badge badge-paid'},'PAID ✓')
+        ),
+        (job.changeOrders||[]).filter(co=>co.status==='approved').length>0&&React.createElement('div',{style:{background:'rgba(230,126,34,.1)',border:'1px solid rgba(230,126,34,.3)',borderRadius:'8px',padding:'10px 14px',fontSize:'12px',color:'#e67e22'}},
+          '⚠ Approved change orders will be added to invoice automatically.'
+        )
+      ),
+      // CHANGE ORDERS TAB
+      (isAdmin||isCrewLead)&&activeTab==='changeorders'&&React.createElement(ChangeOrdersPanel,{job,currentUser,onUpdateCO:handleCOUpdate}),
+      !['details','map','hours','messages','photos','invoice','changeorders'].includes(activeTab)&&null
+    ),
+    showInvoice&&React.createElement(InvoiceModal,{job,onSave:(lines)=>{handleInvoiceSave(lines);setShowInvoice(false);},onClose:()=>setShowInvoice(false),onSend:handleSendInvoice})
+  );
+}
+
+// ── ADMIN JOBS ──
+function AdminJobs({jobs,setJobs,currentUser,showToast}){
+  const [showNew,setShowNew]=useState(false);
+  const [detail,setDetail]=useState(null);
+  const [filter,setFilter]=useState('All');
+  const [search,setSearch]=useState('');
+  const filters=['All',...STATUS_PIPELINE];
+  const filtered=jobs.filter(j=>{
+    const ok=filter==='All'||j.status===filter;
+    const q=search.toLowerCase();
+    return ok&&(!q||j.customer.toLowerCase().includes(q)||j.id.toLowerCase().includes(q)||(j.safeType||'').toLowerCase().includes(q));
+  }).sort((a,b)=>new Date(a.date)-new Date(b.date));
+  function createJob(form){const nj={...form,id:nextJobId(jobs),createdAt:new Date().toISOString()};const u=[...jobs,nj];setJobs(u);saveJobs(u);setShowNew(false);showToast('Job '+nj.id+' created');}
+  function statusChange(id,status){const u=jobs.map(j=>j.id===id?{...j,status}:j);setJobs(u);saveJobs(u);if(detail?.id===id)setDetail(d=>({...d,status}));}
+  function saveDetail(updated){const u=jobs.map(j=>j.id===updated.id?updated:j);setJobs(u);saveJobs(u);setDetail(updated);}
+  const todayStr=new Date().toISOString().split('T')[0];
+  const todayJobs=jobs.filter(j=>j.date===todayStr);
+  const totalUnread=jobs.reduce((s,j)=>s+(j.messages||[]).filter(m=>!m.isAdmin&&!m.read).length,0);
+  const pendingCOs=jobs.reduce((s,j)=>s+(j.changeOrders||[]).filter(co=>co.status==='pending').length,0);
+  return React.createElement('div',null,
+    React.createElement('div',{className:'page-header'},
+      React.createElement('div',null,React.createElement('h1',{className:'page-title'},'Job Orders'),React.createElement('p',{className:'page-subtitle'},jobs.length+' total · '+todayJobs.length+' today'+(totalUnread>0?' · '+totalUnread+' unread msgs':'')+(pendingCOs>0?' · '+pendingCOs+' pending COs':''))),
+      React.createElement('button',{className:'btn btn-gold',onClick:()=>setShowNew(true)},'+ New Job')
+    ),
+    React.createElement('div',{className:'page-body'},
+      React.createElement('div',{className:'stats-row'},
+        React.createElement('div',{className:'stat-card'},React.createElement('div',{className:'stat-label'},'Today'),React.createElement('div',{className:'stat-value'},todayJobs.length),React.createElement('div',{className:'stat-sub'},'Scheduled')),
+        React.createElement('div',{className:'stat-card'},React.createElement('div',{className:'stat-label'},'Active'),React.createElement('div',{className:'stat-value'},jobs.filter(j=>['En Route','On Site'].includes(j.status)).length),React.createElement('div',{className:'stat-sub'},'In field')),
+        React.createElement('div',{className:'stat-card'},
+          React.createElement('div',{className:'stat-label'},'Messages'),
+          React.createElement('div',{className:'stat-value',style:{color:totalUnread>0?'var(--red)':'var(--gold)'}},totalUnread||'—'),
+          React.createElement('div',{className:'stat-sub'},'Unread from crew')
+        ),
+        React.createElement('div',{className:'stat-card'},
+          React.createElement('div',{className:'stat-label'},'Change Orders'),
+          React.createElement('div',{className:'stat-value',style:{color:pendingCOs>0?'#e67e22':'var(--gold)'}},pendingCOs||'—'),
+          React.createElement('div',{className:'stat-sub'},'Pending approval')
+        )
+      ),
+      React.createElement('div',{className:'toolbar'},
+        React.createElement('input',{className:'search-input',placeholder:'Search jobs, customers...',value:search,onChange:e=>setSearch(e.target.value)}),
+        React.createElement('div',{style:{display:'flex',gap:'6px',flexWrap:'wrap'}},filters.map(f=>React.createElement('div',{key:f,className:'filter-chip'+(filter===f?' active':''),onClick:()=>setFilter(f)},f)))
+      ),
+      filtered.length===0?React.createElement('div',{className:'empty-state'},React.createElement('div',{className:'empty-icon'},'📋'),React.createElement('h3',null,'No jobs found')):
+      React.createElement('div',{className:'jobs-grid'},
+        filtered.map(j=>{
+          const jobUnread=(j.messages||[]).filter(m=>!m.isAdmin&&!m.read).length;
+          const jobPendingCO=(j.changeOrders||[]).filter(co=>co.status==='pending').length;
+          return React.createElement('div',{key:j.id,className:'job-card',onClick:()=>setDetail(j)},
+            React.createElement('div',{className:statusBarClass(j.status)}),
+            React.createElement('div',{className:'job-info'},
+              React.createElement('div',{className:'job-top'},
+                React.createElement('span',{className:'job-id'},j.id),
+                React.createElement('span',{className:'job-customer'},j.customer),
+                React.createElement('span',{className:badgeClass(j.status)},j.status),
+                jobUnread>0&&React.createElement('span',{className:'badge badge-urgent'},'💬 '+jobUnread),
+                jobPendingCO>0&&React.createElement('span',{className:'badge',style:{background:'rgba(230,126,34,.2)',color:'#e67e22'}},'⚠ CO'),
+                j.paid&&React.createElement('span',{className:'badge badge-paid'},'PAID')
+              ),
+              React.createElement('div',{className:'job-safe'},j.safeType||'Safe type not specified'),
+              React.createElement('div',{className:'job-addr'},'📍 '+j.deliveryAddr)
+            ),
+            React.createElement('div',{className:'job-meta'},
+              React.createElement('div',{className:'job-date'},fmtDate(j.date)),
+              j.time&&React.createElement('div',null,j.time),
+              React.createElement('div',null,j.crew.map(id=>userById(id)?.initials||'?').join(', ')||'—'),
+              j.estimatedMiles&&React.createElement('div',{style:{color:'var(--muted)',fontSize:'11px'}},j.estimatedMiles+' mi'),
+              j.invoiceLines&&j.invoiceLines.length>0&&React.createElement('div',{style:{color:'var(--gold)',fontWeight:'600'}},fmtMoney(invoiceTotal(j.invoiceLines)))
+            )
+          );
+        })
+      )
+    ),
+    showNew&&React.createElement(JobFormModal,{onSave:createJob,onClose:()=>setShowNew(false),currentUser}),
+    detail&&React.createElement(JobDetailModal,{job:detail,onClose:()=>setDetail(null),onStatusChange:statusChange,onSave:saveDetail,currentUser,showToast})
+  );
+}
+
+// ── MILEAGE LOG ──
+function MileageLog({jobs,mileageLog,setMileageLog,currentUser,showToast}){
+  const isAdmin=currentUser.role==='admin';
+  const todayStr=new Date().toISOString().split('T')[0];
+  const [date,setDate]=useState(todayStr);
+  const [oStart,setOStart]=useState('');
+  const [oEnd,setOEnd]=useState('');
+  const crewUsers=USERS.filter(u=>u.role!=='admin');
+  const [crewId,setCrewId]=useState(isAdmin?'crew1':currentUser.id);
+  function logMileage(){
+    if(!oStart||!oEnd)return showToast('Enter both odometer readings');
+    const todayJobs=jobs.filter(j=>j.date===date);
+    const estMiles=todayJobs.reduce((s,j)=>s+(Number(j.estimatedMiles)||0),0);
+    const actual=Number(oEnd)-Number(oStart);
+    const entry={id:'m'+Date.now(),date,crewId,vehicle:'Truck #1',odometerStart:Number(oStart),odometerEnd:Number(oEnd),totalMiles:actual,estimatedMiles:estMiles,jobs:todayJobs.map(j=>j.id)};
+    const updated=[...mileageLog.filter(m=>!(m.date===date&&m.crewId===crewId)),entry];
+    setMileageLog(updated);saveMileage(updated);setOStart('');setOEnd('');
+    showToast('Mileage logged: '+actual+' miles');
+  }
+  const dayLog=mileageLog.filter(m=>m.date===date);
+  const totalToday=dayLog.reduce((s,m)=>s+m.totalMiles,0);
+  const selectedDateJobs=jobs.filter(j=>j.date===date);
+  const estMilesToday=selectedDateJobs.reduce((s,j)=>s+(Number(j.estimatedMiles)||0),0);
+  return React.createElement('div',null,
+    React.createElement('div',{className:'page-header'},React.createElement('div',null,React.createElement('h1',{className:'page-title'},'Mileage Log'),React.createElement('p',{className:'page-subtitle'},'Vehicle odometer tracking & route miles'))),
+    React.createElement('div',{className:'page-body'},
+      React.createElement('div',{style:{maxWidth:'700px'}},
+        React.createElement('div',{className:'mileage-card'},
+          React.createElement('p',{className:'section-title'},'Log Today\'s Mileage'),
+          React.createElement('div',{className:'form-row',style:{marginBottom:'14px'}},
+            React.createElement('div',{className:'form-group',style:{margin:0}},React.createElement('label',null,'Date'),React.createElement('input',{type:'date',value:date,onChange:e=>setDate(e.target.value)})),
+            isAdmin&&React.createElement('div',{className:'form-group',style:{margin:0}},React.createElement('label',null,'Crew Member'),React.createElement('select',{value:crewId,onChange:e=>setCrewId(e.target.value)},crewUsers.map(u=>React.createElement('option',{key:u.id,value:u.id},u.name))))
+          ),
+          React.createElement('div',{className:'odometer-row'},
+            React.createElement('div',null,React.createElement('div',{style:{fontSize:'11px',color:'var(--muted)',textTransform:'uppercase',letterSpacing:'1px',marginBottom:'8px'}},'Odometer START'),React.createElement('input',{className:'inp',type:'number',placeholder:'e.g. 14250',value:oStart,onChange:e=>setOStart(e.target.value),style:{fontSize:'18px',fontFamily:'DM Mono',letterSpacing:'2px'}})),
+            React.createElement('div',null,React.createElement('div',{style:{fontSize:'11px',color:'var(--muted)',textTransform:'uppercase',letterSpacing:'1px',marginBottom:'8px'}},'Odometer END'),React.createElement('input',{className:'inp',type:'number',placeholder:'e.g. 14298',value:oEnd,onChange:e=>setOEnd(e.target.value),style:{fontSize:'18px',fontFamily:'DM Mono',letterSpacing:'2px'}})),
+            React.createElement('div',null,
+              React.createElement('div',{style:{fontSize:'11px',color:'var(--muted)',textTransform:'uppercase',letterSpacing:'1px',marginBottom:'8px'}},'Miles Driven'),
+              React.createElement('div',{className:'odo-val',style:{paddingTop:'10px'}},(oStart&&oEnd&&Number(oEnd)>Number(oStart))?(Number(oEnd)-Number(oStart))+' mi':'—')
+            )
+          ),
+          estMilesToday>0&&React.createElement('div',{style:{background:'rgba(200,146,42,.08)',borderRadius:'8px',padding:'10px 14px',margin:'14px 0',fontSize:'12px',color:'var(--muted)'}},'📍 Estimated route miles for '+selectedDateJobs.length+' job'+(selectedDateJobs.length>1?'s':'')+' on this date: ',React.createElement('span',{style:{color:'var(--gold)',fontWeight:'700'}},estMilesToday+' mi')),
+          React.createElement('button',{className:'btn btn-gold',style:{marginTop:'14px'},onClick:logMileage},'💾 Log Mileage')
+        ),
+        mileageLog.length>0&&React.createElement('div',null,
+          React.createElement('p',{className:'section-title',style:{marginTop:'24px'}},'Mileage History'),
+          React.createElement('table',{className:'hours-table'},
+            React.createElement('thead',null,React.createElement('tr',null,
+              React.createElement('th',null,'Date'),React.createElement('th',null,'Crew'),React.createElement('th',null,'ODO Start'),React.createElement('th',null,'ODO End'),
+              React.createElement('th',null,'Miles'),React.createElement('th',null,'Est. Miles'),React.createElement('th',null,'Variance'),React.createElement('th',null,'Jobs')
+            )),
+            React.createElement('tbody',null,
+              [...mileageLog].sort((a,b)=>b.date.localeCompare(a.date)).map(m=>
+                React.createElement('tr',{key:m.id},
+                  React.createElement('td',null,fmtDate(m.date)),
+                  React.createElement('td',null,userById(m.crewId)?.name||m.crewId),
+                  React.createElement('td',{style:{fontFamily:'DM Mono',fontSize:'12px'}},m.odometerStart?.toLocaleString()),
+                  React.createElement('td',{style:{fontFamily:'DM Mono',fontSize:'12px'}},m.odometerEnd?.toLocaleString()),
+                  React.createElement('td',{style:{color:'var(--gold)',fontWeight:'700',fontFamily:'DM Mono'}},m.totalMiles+' mi'),
+                  React.createElement('td',{style:{color:'var(--muted)',fontFamily:'DM Mono'}},(m.estimatedMiles||'—')+(m.estimatedMiles?' mi':'')),
+                  React.createElement('td',{style:{color:m.estimatedMiles&&Math.abs(m.totalMiles-m.estimatedMiles)>10?'#e74c3c':'#27ae60',fontFamily:'DM Mono',fontSize:'12px'}},
+                    m.estimatedMiles?(m.totalMiles>m.estimatedMiles?'+':'')+(m.totalMiles-m.estimatedMiles)+' mi':'—'
+                  ),
+                  React.createElement('td',{style:{fontSize:'11px',color:'var(--muted)'}},m.jobs?.join(', ')||'—')
+                )
+              )
+            )
+          )
+        )
+      )
+    )
+  );
+}
+
+// ── ADMIN CALENDAR ──
+function AdminCalendar({jobs,setJobs,currentUser,showToast}){
+  const today=new Date();
+  const [yr,setYr]=useState(today.getFullYear());
+  const [mo,setMo]=useState(today.getMonth());
+  const [detail,setDetail]=useState(null);
+  const firstDay=new Date(yr,mo,1).getDay();
+  const daysInMonth=new Date(yr,mo+1,0).getDate();
+  const cells=[];
+  for(let i=0;i<firstDay;i++)cells.push(null);
+  for(let d=1;d<=daysInMonth;d++)cells.push(d);
+  const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const DAYS=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  function statusChange(id,status){const u=jobs.map(j=>j.id===id?{...j,status}:j);setJobs(u);saveJobs(u);}
+  function saveDetail(updated){const u=jobs.map(j=>j.id===updated.id?updated:j);setJobs(u);saveJobs(u);setDetail(updated);}
+  return React.createElement('div',null,
+    React.createElement('div',{className:'page-header'},
+      React.createElement('div',null,React.createElement('h1',{className:'page-title'},'Calendar'),React.createElement('p',{className:'page-subtitle'},'Schedule overview')),
+      React.createElement('div',{style:{display:'flex',alignItems:'center',gap:'12px'}},
+        React.createElement('button',{className:'btn btn-outline',onClick:()=>{if(mo===0){setMo(11);setYr(y=>y-1);}else setMo(m=>m-1);}},'←'),
+        React.createElement('span',{style:{fontFamily:'Bebas Neue',fontSize:'20px',letterSpacing:'2px',minWidth:'160px',textAlign:'center'}},MONTHS[mo]+' '+yr),
+        React.createElement('button',{className:'btn btn-outline',onClick:()=>{if(mo===11){setMo(0);setYr(y=>y+1);}else setMo(m=>m+1);}},'→')
+      )
+    ),
+    React.createElement('div',{className:'page-body'},
+      React.createElement('div',{className:'cal-grid'},
+        DAYS.map(d=>React.createElement('div',{key:d,className:'cal-day-header'},d)),
+        cells.map((day,i)=>{
+          if(!day)return React.createElement('div',{key:'e'+i,className:'cal-cell other-month'});
+          const ds=yr+'-'+String(mo+1).padStart(2,'0')+'-'+String(day).padStart(2,'0');
+          const dayJobs=jobs.filter(j=>j.date===ds);
+          const isToday=day===today.getDate()&&mo===today.getMonth()&&yr===today.getFullYear();
+          return React.createElement('div',{key:day,className:'cal-cell'+(isToday?' today':'')},
+            React.createElement('div',{className:'cal-date',style:{color:isToday?'var(--gold)':'inherit'}},day),
+            dayJobs.map(j=>React.createElement('div',{key:j.id,className:'cal-job-dot',onClick:()=>setDetail(j),title:j.customer},j.customer.split(' ')[0]))
+          );
+        })
+      )
+    ),
+    detail&&React.createElement(JobDetailModal,{job:detail,onClose:()=>setDetail(null),onStatusChange:statusChange,onSave:saveDetail,currentUser,showToast})
+  );
+}
+
+// ── ADMIN CREW PAGE ──
+function AdminCrew({jobs}){
+  const crew=USERS.filter(u=>u.role!=='admin');
+  return React.createElement('div',null,
+    React.createElement('div',{className:'page-header'},React.createElement('div',null,React.createElement('h1',{className:'page-title'},'Crew'),React.createElement('p',{className:'page-subtitle'},'Team roster & hours summary'))),
+    React.createElement('div',{className:'page-body'},
+      React.createElement('div',{style:{display:'flex',flexDirection:'column',gap:'10px'}},
+        crew.map(u=>{
+          const allEntries=jobs.flatMap(j=>(j.timeEntries||[]).filter(e=>e.crewId===u.id));
+          const totalMs=calcHours(allEntries);
+          const assignedJobs=jobs.filter(j=>j.crew.includes(u.id));
+          return React.createElement('div',{key:u.id,className:'crew-card'},
+            React.createElement('div',{className:'crew-avatar-lg'},u.initials),
+            React.createElement('div',{style:{flex:1}},
+              React.createElement('div',{style:{fontSize:'15px',fontWeight:'600'}},u.name),
+              React.createElement('div',{style:{fontSize:'11px',color:u.role==='crew_lead'?'var(--gold)':'var(--muted)',textTransform:'uppercase',letterSpacing:'1px'}},u.role==='crew_lead'?'⭐ Crew Lead':'Crew Member'),
+              React.createElement('div',{style:{fontSize:'12px',color:'var(--muted)',marginTop:'2px'}},u.phone+' · Login: '+u.username)
+            ),
+            React.createElement('div',{style:{textAlign:'right',fontSize:'12px'}},
+              React.createElement('div',{style:{fontFamily:'Bebas Neue',fontSize:'22px',color:'var(--gold)'}},assignedJobs.length),
+              React.createElement('div',{style:{color:'var(--muted)',fontSize:'10px',textTransform:'uppercase',letterSpacing:'1px'}},'Total Jobs'),
+              React.createElement('div',{style:{fontFamily:'DM Mono',fontSize:'13px',color:'var(--off-white)',marginTop:'4px'}},fmtHours(totalMs)),
+              React.createElement('div',{style:{color:'var(--muted)',fontSize:'10px',textTransform:'uppercase',letterSpacing:'1px'}},'Total Hours')
+            )
+          );
+        })
+      )
+    )
+  );
+}
+
+// ── ADMIN MAP VIEW ──
+function AdminMapView({jobs}){
+  const todayStr=new Date().toISOString().split('T')[0];
+  const [selectedDate,setSelectedDate]=useState(todayStr);
+  const dateJobs=jobs.filter(j=>j.date===selectedDate);
+  const totalEstMiles=dateJobs.reduce((s,j)=>s+(Number(j.estimatedMiles)||0),0);
+  return React.createElement('div',null,
+    React.createElement('div',{className:'page-header'},
+      React.createElement('div',null,React.createElement('h1',{className:'page-title'},'Route Map'),React.createElement('p',{className:'page-subtitle'},'Daily routes from base location')),
+      React.createElement('input',{type:'date',value:selectedDate,onChange:e=>setSelectedDate(e.target.value),style:{background:'var(--navy-mid)',border:'1px solid var(--border)',borderRadius:'8px',color:'var(--off-white)',fontFamily:'DM Sans',fontSize:'13px',padding:'8px 14px',outline:'none'}})
+    ),
+    React.createElement('div',{className:'page-body'},
+      React.createElement(JobMap,{jobs:dateJobs,selectedJobId:null}),
+      React.createElement('div',{className:'map-stats',style:{marginTop:'14px'}},
+        React.createElement('div',{className:'map-stat'},React.createElement('div',{className:'map-stat-val'},dateJobs.length),React.createElement('div',{className:'map-stat-lbl'},'Jobs This Day')),
+        React.createElement('div',{className:'map-stat'},React.createElement('div',{className:'map-stat-val'},totalEstMiles||'—'),React.createElement('div',{className:'map-stat-lbl'},'Est. Total Miles')),
+        React.createElement('div',{className:'map-stat'},React.createElement('div',{className:'map-stat-val'},[...new Set(dateJobs.flatMap(j=>j.crew))].length||'—'),React.createElement('div',{className:'map-stat-lbl'},'Crew Deployed'))
+      ),
+      dateJobs.length>0&&React.createElement('div',{style:{marginTop:'20px'}},
+        React.createElement('p',{className:'section-title'},'Jobs on '+fmtDate(selectedDate)),
+        React.createElement('div',{style:{display:'flex',flexDirection:'column',gap:'8px'}},
+          dateJobs.map((j,i)=>React.createElement('div',{key:j.id,style:{background:'var(--navy-mid)',border:'1px solid var(--border)',borderRadius:'10px',padding:'12px 16px',display:'flex',justifyContent:'space-between',alignItems:'center'}},
+            React.createElement('div',null,
+              React.createElement('span',{style:{fontFamily:'DM Mono',fontSize:'11px',color:'var(--muted)',marginRight:'10px'}},'Stop '+(i+1)),
+              React.createElement('span',{style:{fontWeight:'600'}},j.customer),
+              React.createElement('div',{style:{fontSize:'12px',color:'var(--muted)',marginTop:'3px'}},'📍 '+j.deliveryAddr)
+            ),
+            React.createElement('div',{style:{textAlign:'right',fontSize:'12px'}},
+              j.estimatedMiles&&React.createElement('div',{style:{color:'var(--gold)',fontWeight:'700',fontFamily:'DM Mono'}},j.estimatedMiles+' mi'),
+              React.createElement('span',{className:badgeClass(j.status)},j.status)
+            )
+          ))
+        )
+      ),
+      dateJobs.length===0&&React.createElement('div',{className:'empty-state'},React.createElement('div',{className:'empty-icon'},'🗺️'),React.createElement('h3',null,'No jobs scheduled for this date'))
+    )
+  );
+}
+
+// ── ADMIN CUSTOMERS ──
+function AdminCustomers({jobs}){
+  const customers={};
+  jobs.forEach(j=>{if(!customers[j.customer])customers[j.customer]={name:j.customer,phone:j.phone,email:j.email,jobs:[]};customers[j.customer].jobs.push(j);});
+  const list=Object.values(customers);
+  return React.createElement('div',null,
+    React.createElement('div',{className:'page-header'},React.createElement('div',null,React.createElement('h1',{className:'page-title'},'Customers'),React.createElement('p',{className:'page-subtitle'},list.length+' on record'))),
+    React.createElement('div',{className:'page-body'},
+      list.length===0?React.createElement('div',{className:'empty-state'},React.createElement('div',{className:'empty-icon'},'👥'),React.createElement('h3',null,'No customers yet')):
+      React.createElement('div',{style:{display:'flex',flexDirection:'column',gap:'10px'}},
+        list.map(c=>React.createElement('div',{key:c.name,className:'crew-card'},
+          React.createElement('div',{className:'crew-avatar-lg',style:{background:'var(--navy-light)',color:'var(--gold)',fontSize:'15px'}},c.name[0]),
+          React.createElement('div',{style:{flex:1}},
+            React.createElement('div',{style:{fontSize:'15px',fontWeight:'600'}},c.name),
+            React.createElement('div',{style:{fontSize:'12px',color:'var(--muted)',marginTop:'2px'}},c.phone+(c.email?' · '+c.email:''))
+          ),
+          React.createElement('div',{style:{textAlign:'right',fontSize:'12px'}},
+            React.createElement('div',{style:{fontFamily:'Bebas Neue',fontSize:'22px',color:'var(--gold)'}},c.jobs.length),
+            React.createElement('div',{style:{color:'var(--muted)',fontSize:'10px',textTransform:'uppercase',letterSpacing:'1px'}},'Jobs'),
+            React.createElement('div',{style:{color:'var(--gold)',fontWeight:'600',marginTop:'4px'}},fmtMoney(c.jobs.reduce((s,j)=>s+invoiceTotal(j.invoiceLines||[]),0)))
+          )
+        ))
+      )
+    )
+  );
+}
+
+// ── CREW VIEW ──
+function CrewView({jobs,setJobs,currentUser,showToast,mileageLog,setMileageLog}){
+  const [page,setPage]=useState('jobs');
+  const myJobs=jobs.filter(j=>j.crew.includes(currentUser.id)).sort((a,b)=>new Date(a.date)-new Date(b.date));
+  const [detail,setDetail]=useState(null);
+  const upcoming=myJobs.filter(j=>!['Complete','Invoiced','Paid'].includes(j.status));
+  const done=myJobs.filter(j=>['Complete','Invoiced','Paid'].includes(j.status));
+  const CREW_STATUSES=['Scheduled','En Route','On Site','Complete'];
+  function statusChange(id,status){const u=jobs.map(j=>j.id===id?{...j,status}:j);setJobs(u);saveJobs(u);if(detail?.id===id)setDetail(d=>({...d,status}));}
+  function saveDetail(updated){const u=jobs.map(j=>j.id===updated.id?updated:j);setJobs(u);saveJobs(u);setDetail(updated);}
+  const myUnreadReplies=myJobs.reduce((s,j)=>s+(j.messages||[]).filter(m=>m.isAdmin&&!m.read).length,0);
+  const crewNav=[
+    {id:'jobs',icon:'🔧',label:'My Jobs'},
+    {id:'mileage',icon:'🚛',label:'Mileage'},
+  ];
+  if(page==='mileage')return React.createElement('div',{className:'app-shell'},
+    React.createElement('div',{className:'sidebar'},
+      React.createElement('div',{className:'sidebar-logo'},React.createElement('img',{src:'https://www.atlanticsafe.com/uploads/2/3/8/2/23820942/published/atlantic-safe-co-logo-wht-bg.gif',alt:'ASC'}),React.createElement('div',{className:'site-name'},'Dispatch'),React.createElement('div',{className:'sidebar-role'},'Crew Portal')),
+      React.createElement('div',{className:'nav-section'},crewNav.map(n=>React.createElement('div',{key:n.id,className:'nav-item'+(page===n.id?' active':''),onClick:()=>setPage(n.id)},React.createElement('span',{className:'nav-icon'},n.icon),React.createElement('span',null,n.label)))),
+      React.createElement('div',{className:'sidebar-footer'},
+        React.createElement('div',{className:'user-chip'},React.createElement('div',{className:'user-avatar'},currentUser.initials),React.createElement('div',null,React.createElement('div',{className:'user-name'},currentUser.name),React.createElement('div',{className:'user-role-text'},currentUser.role==='crew_lead'?'Lead':'Crew')))
+      )
+    ),
+    React.createElement('div',{className:'main'},React.createElement(MileageLog,{jobs,mileageLog,setMileageLog,currentUser,showToast}))
+  );
+  return React.createElement('div',{className:'app-shell'},
+    React.createElement('div',{className:'sidebar'},
+      React.createElement('div',{className:'sidebar-logo'},React.createElement('img',{src:'https://www.atlanticsafe.com/uploads/2/3/8/2/23820942/published/atlantic-safe-co-logo-wht-bg.gif',alt:'ASC'}),React.createElement('div',{className:'site-name'},'Dispatch'),React.createElement('div',{className:'sidebar-role'},'Crew Portal')),
+      React.createElement('div',{className:'nav-section'},crewNav.map(n=>React.createElement('div',{key:n.id,className:'nav-item'+(page===n.id?' active':''),onClick:()=>setPage(n.id)},React.createElement('span',{className:'nav-icon'},n.icon),React.createElement('span',null,n.label)))),
+      React.createElement('div',{className:'sidebar-footer'},
+        React.createElement('div',{className:'user-chip'},React.createElement('div',{className:'user-avatar'},currentUser.initials),React.createElement('div',null,React.createElement('div',{className:'user-name'},currentUser.name),React.createElement('div',{className:'user-role-text'},currentUser.role==='crew_lead'?'Lead':'Crew')))
+      )
+    ),
+    React.createElement('div',{className:'main'},
+      React.createElement('div',{className:'page-header'},React.createElement('div',null,React.createElement('h1',{className:'page-title'},'My Jobs'),React.createElement('p',{className:'page-subtitle'},upcoming.length+' upcoming'+(myUnreadReplies>0?' · '+myUnreadReplies+' new replies':'')))),
+      React.createElement('div',{className:'page-body'},
+        upcoming.length===0&&done.length===0&&React.createElement('div',{className:'empty-state'},React.createElement('div',{className:'empty-icon'},'🔧'),React.createElement('h3',null,'No jobs assigned yet')),
+        upcoming.map(j=>{
+          const adminReplies=(j.messages||[]).filter(m=>m.isAdmin&&!m.read).length;
+          const pendingCO=(j.changeOrders||[]).filter(co=>co.status==='pending').length;
+          return React.createElement('div',{key:j.id,className:'crew-job-card'},
+            React.createElement('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'flex-start',flexWrap:'wrap',gap:'8px'}},
+              React.createElement('div',null,
+                React.createElement('div',{style:{display:'flex',alignItems:'center',gap:'8px',flexWrap:'wrap'}},
+                  React.createElement('span',{style:{fontFamily:'DM Mono',fontSize:'11px',color:'var(--muted)'}},j.id),
+                  React.createElement('span',{className:badgeClass(j.status)},j.status),
+                  adminReplies>0&&React.createElement('span',{className:'badge badge-urgent'},'💬 Reply'),
+                  pendingCO>0&&React.createElement('span',{className:'badge',style:{background:'rgba(39,174,96,.2)',color:'#27ae60'}},'CO Updated')
+                ),
+                React.createElement('div',{style:{fontSize:'17px',fontWeight:'700',marginTop:'4px'}},j.customer),
+                React.createElement('div',{style:{fontSize:'12px',color:'var(--muted)',marginTop:'2px'}},fmtDate(j.date)+(j.time?' @ '+j.time:''))
+              ),
+              React.createElement('button',{className:'btn btn-outline',style:{fontSize:'11px'},onClick:()=>setDetail(j)},'Open Job')
+            ),
+            React.createElement('hr',{className:'section-divider',style:{margin:'14px 0'}}),
+            React.createElement('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'10px',fontSize:'13px'}},
+              React.createElement('div',null,React.createElement('div',{style:{fontSize:'10px',color:'var(--muted)',textTransform:'uppercase',letterSpacing:'1px',marginBottom:'3px'}},'Safe'),React.createElement('div',null,(j.safeType||'—')+(j.weight?' · '+j.weight:''))),
+              React.createElement('div',null,React.createElement('div',{style:{fontSize:'10px',color:'var(--muted)',textTransform:'uppercase',letterSpacing:'1px',marginBottom:'3px'}},'Trailer'),React.createElement('div',null,j.trailer||'None')),
+              React.createElement('div',null,React.createElement('div',{style:{fontSize:'10px',color:'var(--muted)',textTransform:'uppercase',letterSpacing:'1px',marginBottom:'3px'}},'Pickup'),React.createElement('div',null,j.pickupAddr||'—')),
+              React.createElement('div',null,React.createElement('div',{style:{fontSize:'10px',color:'var(--muted)',textTransform:'uppercase',letterSpacing:'1px',marginBottom:'3px'}},'Delivery'),React.createElement('div',null,j.deliveryAddr||'—'))
+            ),
+            j.notes&&React.createElement('div',{className:'notes-box',style:{marginTop:'12px'}},'⚠ '+j.notes),
+            React.createElement('div',{className:'status-btn-row'},
+              React.createElement('span',{style:{fontSize:'11px',color:'var(--muted)',alignSelf:'center',marginRight:'4px'}},'Status:'),
+              CREW_STATUSES.map(s=>React.createElement('button',{key:s,className:'status-btn'+(j.status===s?' active-status':''),onClick:()=>{statusChange(j.id,s);showToast('Status → '+s);}},s))
+            )
+          );
+        }),
+        done.length>0&&React.createElement('div',null,
+          React.createElement('div',{style:{fontSize:'11px',color:'var(--muted)',textTransform:'uppercase',letterSpacing:'1px',fontWeight:'600',margin:'22px 0 10px'}},'Completed'),
+          done.map(j=>React.createElement('div',{key:j.id,className:'job-card',onClick:()=>setDetail(j),style:{opacity:.7}},
+            React.createElement('div',{className:statusBarClass(j.status)}),
+            React.createElement('div',{className:'job-info'},React.createElement('div',{className:'job-top'},React.createElement('span',{className:'job-id'},j.id),React.createElement('span',{className:'job-customer'},j.customer),React.createElement('span',{className:badgeClass(j.status)},j.status)),React.createElement('div',{className:'job-addr'},'📍 '+j.deliveryAddr)),
+            React.createElement('div',{className:'job-meta'},React.createElement('div',{className:'job-date'},fmtDate(j.date)))
+          ))
+        )
+      ),
+      detail&&React.createElement(JobDetailModal,{job:detail,onClose:()=>setDetail(null),onStatusChange:statusChange,onSave:saveDetail,currentUser,showToast})
+    )
+  );
+}
+
+// ── MAIN APP ──
+function App(){
+  const [user,setUser]=useState(null);
+  const [page,setPage]=useState('jobs');
+  const [jobs,setJobs]=useState(loadJobs);
+  const [mileageLog,setMileageLog]=useState(loadMileage);
+  const [toast,setToast]=useState(null);
+  const [syncStatus,setSyncStatus]=useState(SHEETS_READY()?'syncing':'local');
+
+  // Load from Google Sheets on startup
+  useEffect(()=>{
+    if(!SHEETS_READY()) return;
+    setSyncStatus('syncing');
+    loadJobsRemote().then(remoteJobs=>{
+      if(remoteJobs) setJobs(remoteJobs);
+      return loadMileageRemote();
+    }).then(remoteMileage=>{
+      if(remoteMileage) setMileageLog(remoteMileage);
+      setSyncStatus('synced');
+    }).catch(()=>setSyncStatus('error'));
+  },[]);
+
+  function showToast(msg){setToast(msg);setTimeout(()=>setToast(null),2800);}
+  function logout(){setUser(null);setPage('jobs');}
+
+  if(!user)return React.createElement(Login,{onLogin:(u)=>{setUser(u);setPage('jobs');}});
+  const isAdmin=user.role==='admin';
+  if(!isAdmin)return React.createElement(CrewView,{jobs,setJobs,currentUser:user,showToast,mileageLog,setMileageLog});
+  const totalUnread=jobs.reduce((s,j)=>s+(j.messages||[]).filter(m=>!m.isAdmin&&!m.read).length,0);
+  const pendingCOs=jobs.reduce((s,j)=>s+(j.changeOrders||[]).filter(co=>co.status==='pending').length,0);
+  const adminNav=[
+    {id:'jobs',icon:'📋',label:'Jobs',badge:totalUnread+pendingCOs},
+    {id:'map',icon:'🗺️',label:'Route Map'},
+    {id:'mileage',icon:'🚛',label:'Mileage'},
+    {id:'calendar',icon:'📅',label:'Calendar'},
+    {id:'crew',icon:'👷',label:'Crew'},
+    {id:'customers',icon:'👥',label:'Customers'},
+  ];
+  function renderPage(){
+    if(page==='jobs')return React.createElement(AdminJobs,{jobs,setJobs,currentUser:user,showToast});
+    if(page==='map')return React.createElement(AdminMapView,{jobs});
+    if(page==='mileage')return React.createElement(MileageLog,{jobs,mileageLog,setMileageLog,currentUser:user,showToast});
+    if(page==='calendar')return React.createElement(AdminCalendar,{jobs,setJobs,currentUser:user,showToast});
+    if(page==='crew')return React.createElement(AdminCrew,{jobs});
+    if(page==='customers')return React.createElement(AdminCustomers,{jobs});
+  }
+  return React.createElement('div',{className:'app-shell'},
+    React.createElement('div',{className:'sidebar'},
+      React.createElement('div',{className:'sidebar-logo'},
+        React.createElement('img',{src:'https://www.atlanticsafe.com/uploads/2/3/8/2/23820942/published/atlantic-safe-co-logo-wht-bg.gif',alt:'ASC'}),
+        React.createElement('div',{className:'site-name'},'Dispatch'),
+        React.createElement('div',{className:'sidebar-role'},'Admin Panel')
+      ),
+      React.createElement('div',{className:'nav-section'},
+        adminNav.map(n=>React.createElement('div',{key:n.id,className:'nav-item'+(page===n.id?' active':''),onClick:()=>setPage(n.id)},
+          React.createElement('span',{className:'nav-icon'},n.icon),
+          React.createElement('span',null,n.label),
+          n.badge>0&&React.createElement('span',{className:'nav-badge'},n.badge)
+        ))
+      ),
+      React.createElement('div',{className:'sidebar-footer'},
+        React.createElement('div',{style:{fontSize:'10px',marginBottom:'10px',display:'flex',alignItems:'center',gap:'6px',color:syncStatus==='synced'?'#27ae60':syncStatus==='error'?'#e74c3c':'var(--muted)'}},
+          React.createElement('span',null,syncStatus==='synced'?'●':syncStatus==='error'?'●':'○'),
+          React.createElement('span',null,syncStatus==='synced'?'Synced to Sheets':syncStatus==='error'?'Sync error — local only':syncStatus==='syncing'?'Syncing...':'Local only — add Sheets URL')
+        ),
+        React.createElement('div',{className:'user-chip'},
+          React.createElement('div',{className:'user-avatar'},user.initials),
+          React.createElement('div',null,React.createElement('div',{className:'user-name'},user.name),React.createElement('div',{className:'user-role-text'},'Admin'))
+        ),
+        React.createElement('button',{className:'btn btn-outline',onClick:logout,style:{width:'100%',marginTop:'10px',fontSize:'11px',justifyContent:'center'}},'Sign Out')
+      )
+    ),
+    React.createElement('div',{className:'main'},renderPage()),
+    toast&&React.createElement(Toast,{msg:toast})
+  );
+}
+
+ReactDOM.render(React.createElement(App),document.getElementById('root'));
+</script>
+</body>
+</html>
