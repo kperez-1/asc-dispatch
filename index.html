@@ -2,7 +2,10 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="theme-color" content="#0d1b2a"/>
 <title>Atlantic Safe Co — Dispatch</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <link href="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css" rel="stylesheet"/>
@@ -260,14 +263,155 @@
   /* MAPBOX OVERRIDES */
   .mapboxgl-ctrl-logo,.mapboxgl-ctrl-attrib{opacity:.4;}
 
+  /* ── MOBILE TOP HEADER ── */
+  .mobile-header {
+    display:none;
+    position:sticky; top:0; z-index:40;
+    background:var(--navy-mid);
+    border-bottom:1px solid var(--border);
+    padding:10px 16px;
+    padding-top:max(10px, env(safe-area-inset-top));
+    align-items:center; justify-content:space-between;
+    -webkit-backdrop-filter:blur(10px);
+    backdrop-filter:blur(10px);
+  }
+  .mobile-header img { height:30px; border-radius:3px; }
+  .mobile-header-right { display:flex; align-items:center; gap:10px; }
+  .mobile-header-user { font-size:12px; color:var(--muted); }
+  .mobile-signout { background:none; border:1px solid var(--border); color:var(--muted); border-radius:6px; padding:5px 10px; font-size:11px; cursor:pointer; font-family:'DM Sans',sans-serif; }
   @media(max-width:768px){
-    .sidebar{width:56px;}
-    .sidebar-logo .site-name,.nav-label,.nav-item span,.sidebar-footer .user-name,.sidebar-footer .user-role-text{display:none;}
-    .nav-item{padding:12px;justify-content:center;}
-    .stats-row{grid-template-columns:1fr 1fr;}
-    .form-row,.form-row-3{grid-template-columns:1fr;}
-    .page-header{padding:16px 16px 0;}
-    .page-body{padding:14px 16px 40px;}
+    .mobile-header { display:flex; }
+  }
+
+  /* ── MOBILE / iPHONE SAFARI ── */
+  @media(max-width:768px){
+    /* Prevent iOS input zoom — font-size must be ≥16px */
+    input, select, textarea { font-size:16px !important; }
+
+    /* Hide sidebar on mobile — replaced by bottom tab bar */
+    .sidebar { display:none !important; }
+
+    /* Main content fills full screen, padded for bottom tab bar */
+    .app-shell { flex-direction:column; }
+    .main { padding-bottom:72px; }
+
+    /* Page layout */
+    .page-header { padding:16px 14px 0; flex-direction:column; align-items:flex-start; gap:10px; }
+    .page-title { font-size:24px; }
+    .page-body { padding:14px 14px 24px; }
+
+    /* Stats — 2 col on mobile */
+    .stats-row { grid-template-columns:1fr 1fr; gap:10px; }
+    .stat-value { font-size:28px; }
+
+    /* All form rows stack */
+    .form-row, .form-row-3 { grid-template-columns:1fr; }
+
+    /* Modals go full screen on iPhone */
+    .modal-bg { padding:0; align-items:flex-end; }
+    .modal {
+      max-width:100% !important; border-radius:20px 20px 0 0;
+      max-height:92vh; overflow-y:auto;
+      padding:20px 18px 36px;
+      /* iOS safe area */
+      padding-bottom:max(36px, env(safe-area-inset-bottom));
+    }
+    .modal-wide { max-width:100% !important; }
+
+    /* Job cards — stack meta below info */
+    .job-card { grid-template-columns:6px 1fr; }
+    .job-meta { display:none; }
+    .job-top { gap:6px; }
+
+    /* Pipeline — smaller dots */
+    .pipe-dot { width:22px; height:22px; font-size:9px; }
+    .pipe-label { font-size:8px; }
+    .pipeline { gap:0; }
+
+    /* Tabs — scrollable horizontal */
+    .tabs { width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch; flex-shrink:0; }
+    .tab { white-space:nowrap; padding:7px 12px; }
+
+    /* Toolbar */
+    .toolbar { flex-direction:column; align-items:stretch; }
+    .search-input { width:100%; }
+
+    /* Status buttons */
+    .status-btn-row { gap:6px; }
+    .status-btn { padding:8px 10px; font-size:11px; }
+
+    /* Crew cards */
+    .crew-card { flex-wrap:wrap; gap:10px; }
+
+    /* Detail grid — single column */
+    .detail-grid { grid-template-columns:1fr; }
+
+    /* Invoice line — stack on mobile */
+    .invoice-line { grid-template-columns:1fr 60px 80px 28px; gap:6px; }
+
+    /* Map */
+    #job-map, [ref] { height:240px !important; }
+
+    /* Hours table — hide some cols */
+    .hours-table th:nth-child(2),
+    .hours-table td:nth-child(2) { display:none; }
+
+    /* Mileage odometer row */
+    .odometer-row { grid-template-columns:1fr 1fr; gap:10px; }
+
+    /* Cal grid — smaller */
+    .cal-cell { min-height:52px; padding:4px; }
+    .cal-date { font-size:10px; }
+    .cal-job-dot { font-size:9px; padding:1px 3px; }
+
+    /* Message input */
+    .msg-input-row { flex-direction:column; }
+    .msg-textarea { min-height:60px; }
+
+    /* Photo grid */
+    .photo-grid { grid-template-columns:repeat(3,1fr); }
+
+    /* Map stats */
+    .map-stats { grid-template-columns:1fr 1fr; }
+
+    /* Touch targets — minimum 44px */
+    .btn { min-height:44px; }
+    .nav-item { min-height:44px; }
+    .clock-btn { min-height:36px; }
+    .filter-chip { min-height:36px; }
+  }
+
+  /* ── BOTTOM TAB BAR (mobile only) ── */
+  .bottom-tab-bar {
+    display:none;
+    position:fixed; bottom:0; left:0; right:0;
+    background:var(--navy-mid);
+    border-top:1px solid var(--border);
+    z-index:50;
+    padding-bottom:env(safe-area-inset-bottom);
+    -webkit-backdrop-filter:blur(10px);
+    backdrop-filter:blur(10px);
+  }
+  .bottom-tab-bar-inner {
+    display:flex; align-items:stretch;
+  }
+  .bottom-tab {
+    flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    padding:8px 4px; cursor:pointer; border:none; background:transparent;
+    color:var(--muted); transition:color .15s; min-height:56px; gap:3px;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .bottom-tab.active { color:var(--gold); }
+  .bottom-tab-icon { font-size:20px; line-height:1; }
+  .bottom-tab-label { font-size:9px; font-weight:600; letter-spacing:.5px; text-transform:uppercase; }
+  .bottom-tab-badge {
+    position:absolute; top:6px; right:calc(50% - 16px);
+    background:var(--red); color:#fff; border-radius:10px;
+    font-size:9px; font-weight:700; padding:1px 5px; min-width:16px; text-align:center;
+  }
+  .bottom-tab-wrap { position:relative; }
+  @media(max-width:768px){
+    .bottom-tab-bar { display:block; }
   }
 </style>
 </head>
@@ -1453,15 +1597,89 @@ function AdminCalendar({jobs,setJobs,currentUser,showToast}){
 }
 
 // ── ADMIN CREW PAGE ──
+// ── CREW USER FORM (top-level to prevent remount on keystroke) ──
+function UserForm({editing,setEditing,onSave,onClose}){
+  const [showPw,setShowPw]=useState(false);
+  function initials(name){return name.split(' ').map(p=>p[0]).join('').toUpperCase().slice(0,2);}
+  return React.createElement('div',{className:'modal-bg',onClick:e=>{if(e.target===e.currentTarget)onClose();}},
+    React.createElement('div',{className:'modal',style:{maxWidth:'480px'}},
+      React.createElement('div',{className:'modal-header'},
+        React.createElement('h2',{className:'modal-title'},editing.id?'Edit User':'Add Crew Member'),
+        React.createElement('button',{className:'modal-close',onClick:onClose},'×')
+      ),
+      React.createElement('div',{className:'form-row'},
+        React.createElement('div',{className:'form-group'},React.createElement('label',null,'Full Name *'),React.createElement('input',{value:editing.name,onChange:e=>setEditing(v=>({...v,name:e.target.value,initials:initials(e.target.value)})),placeholder:'e.g. Mike Torres'})),
+        React.createElement('div',{className:'form-group'},React.createElement('label',null,'Phone'),React.createElement('input',{value:editing.phone,onChange:e=>setEditing(v=>({...v,phone:e.target.value})),placeholder:'772-555-0000'}))
+      ),
+      React.createElement('div',{className:'form-group'},
+        React.createElement('label',null,'Role'),
+        React.createElement('select',{value:editing.role,onChange:e=>setEditing(v=>({...v,role:e.target.value}))},
+          React.createElement('option',{value:'crew'},'Crew Member'),
+          React.createElement('option',{value:'crew_lead'},'Crew Lead ⭐'),
+          React.createElement('option',{value:'admin'},'Admin')
+        )
+      ),
+      React.createElement('hr',{className:'section-divider'}),
+      React.createElement('p',{className:'section-title'},'Login Credentials'),
+      React.createElement('div',{className:'form-row'},
+        React.createElement('div',{className:'form-group'},React.createElement('label',null,'Username *'),React.createElement('input',{value:editing.username,onChange:e=>setEditing(v=>({...v,username:e.target.value})),placeholder:'e.g. mike',autoComplete:'off'})),
+        React.createElement('div',{className:'form-group'},
+          React.createElement('label',null,'Password *'),
+          React.createElement('div',{style:{position:'relative'}},
+            React.createElement('input',{type:showPw?'text':'password',value:editing.password,onChange:e=>setEditing(v=>({...v,password:e.target.value})),placeholder:'Set a password',autoComplete:'new-password',style:{paddingRight:'40px'}}),
+            React.createElement('button',{onClick:()=>setShowPw(p=>!p),style:{position:'absolute',right:'10px',top:'50%',transform:'translateY(-50%)',background:'none',border:'none',color:'var(--muted)',cursor:'pointer',fontSize:'14px'}},showPw?'🙈':'👁')
+          )
+        )
+      ),
+      React.createElement('div',{style:{background:'rgba(200,146,42,.08)',border:'1px solid rgba(200,146,42,.2)',borderRadius:'8px',padding:'10px 14px',fontSize:'12px',color:'var(--muted)',marginTop:'4px'}},'💡 Crew members use these credentials to log into the dispatch app on their phone.'),
+      React.createElement('div',{className:'modal-actions'},
+        React.createElement('button',{className:'btn btn-outline',onClick:onClose},'Cancel'),
+        React.createElement('button',{className:'btn btn-gold',onClick:onSave},editing.id?'Save Changes':'Add Crew Member')
+      )
+    )
+  );
+}
+
+// ── CREW USER CARD ──
+function UserCard({u,isAdmin,jobs,onEdit,onDelete}){
+  const allEntries=jobs.flatMap(j=>(j.timeEntries||[]).filter(e=>e.crewId===u.id));
+  const totalMs=calcHours(allEntries);
+  const assignedJobs=jobs.filter(j=>j.crew.includes(u.id));
+  return React.createElement('div',{className:'crew-card'},
+    React.createElement('div',{className:'crew-avatar-lg',style:{background:isAdmin?'var(--navy-light)':u.role==='crew_lead'?'rgba(200,146,42,.3)':'var(--gold)',color:isAdmin?'var(--gold)':'var(--navy)'}},u.initials),
+    React.createElement('div',{style:{flex:1,minWidth:0}},
+      React.createElement('div',{style:{fontSize:'15px',fontWeight:'600'}},u.name),
+      React.createElement('div',{style:{fontSize:'11px',color:u.role==='crew_lead'?'var(--gold)':u.role==='admin'?'#5dade2':'var(--muted)',textTransform:'uppercase',letterSpacing:'1px',marginTop:'2px'}},
+        u.role==='crew_lead'?'⭐ Crew Lead':u.role==='admin'?'🔑 Admin':'Crew Member'
+      ),
+      React.createElement('div',{style:{fontSize:'12px',color:'var(--muted)',marginTop:'3px'}},u.phone||'No phone'),
+      React.createElement('div',{style:{display:'flex',alignItems:'center',gap:'8px',marginTop:'5px'}},
+        React.createElement('span',{style:{fontFamily:'DM Mono',fontSize:'11px',background:'var(--navy-light)',padding:'2px 8px',borderRadius:'4px',color:'var(--off-white)'}},u.username),
+        React.createElement('span',{style:{fontSize:'11px',color:'var(--muted)'}},'••••••••')
+      )
+    ),
+    React.createElement('div',{style:{display:'flex',flexDirection:'column',alignItems:'flex-end',gap:'10px'}},
+      !isAdmin&&React.createElement('div',{style:{textAlign:'right'}},
+        React.createElement('div',{style:{fontFamily:'Bebas Neue',fontSize:'22px',color:'var(--gold)',lineHeight:'1'}},assignedJobs.length),
+        React.createElement('div',{style:{color:'var(--muted)',fontSize:'10px',textTransform:'uppercase',letterSpacing:'1px'}},'Jobs'),
+        React.createElement('div',{style:{fontFamily:'DM Mono',fontSize:'12px',color:'var(--off-white)',marginTop:'3px'}},fmtHours(totalMs)),
+        React.createElement('div',{style:{color:'var(--muted)',fontSize:'10px',textTransform:'uppercase',letterSpacing:'1px'}},'Hours')
+      ),
+      React.createElement('div',{style:{display:'flex',gap:'6px'}},
+        React.createElement('button',{className:'btn btn-outline',style:{fontSize:'11px',padding:'6px 12px'},onClick:()=>onEdit(u)},'✏️ Edit'),
+        u.id!=='admin1'&&React.createElement('button',{className:'btn btn-danger',style:{fontSize:'11px',padding:'6px 12px'},onClick:()=>onDelete(u.id)},'✕')
+      )
+    )
+  );
+}
+
 function AdminCrew({jobs,users,setUsers}){
   const [showForm,setShowForm]=useState(false);
   const [editing,setEditing]=useState(null);
-  const [showPw,setShowPw]=useState({});
   const crew=users.filter(u=>u.role!=='admin');
   const admins=users.filter(u=>u.role==='admin');
 
   function initials(name){return name.split(' ').map(p=>p[0]).join('').toUpperCase().slice(0,2);}
-
   function openAdd(){setEditing({id:'',name:'',username:'',password:'',phone:'',role:'crew',initials:''});setShowForm(true);}
   function openEdit(u){setEditing({...u});setShowForm(true);}
   function handleDelete(id){
@@ -1485,76 +1703,6 @@ function AdminCrew({jobs,users,setUsers}){
     setShowForm(false);setEditing(null);
   }
 
-  const UserForm=()=>React.createElement('div',{className:'modal-bg',onClick:e=>{if(e.target===e.currentTarget){setShowForm(false);setEditing(null);}}},
-    React.createElement('div',{className:'modal',style:{maxWidth:'480px'}},
-      React.createElement('div',{className:'modal-header'},
-        React.createElement('h2',{className:'modal-title'},editing.id?'Edit User':'Add Crew Member'),
-        React.createElement('button',{className:'modal-close',onClick:()=>{setShowForm(false);setEditing(null);}},'×')
-      ),
-      React.createElement('div',{className:'form-row'},
-        React.createElement('div',{className:'form-group'},React.createElement('label',null,'Full Name *'),React.createElement('input',{value:editing.name,onChange:e=>setEditing(v=>({...v,name:e.target.value,initials:initials(e.target.value)})),placeholder:'e.g. Mike Torres'})),
-        React.createElement('div',{className:'form-group'},React.createElement('label',null,'Phone'),React.createElement('input',{value:editing.phone,onChange:e=>setEditing(v=>({...v,phone:e.target.value})),placeholder:'772-555-0000'}))
-      ),
-      React.createElement('div',{className:'form-group'},
-        React.createElement('label',null,'Role'),
-        React.createElement('select',{value:editing.role,onChange:e=>setEditing(v=>({...v,role:e.target.value}))},
-          React.createElement('option',{value:'crew'},'Crew Member'),
-          React.createElement('option',{value:'crew_lead'},'Crew Lead ⭐'),
-          React.createElement('option',{value:'admin'},'Admin')
-        )
-      ),
-      React.createElement('hr',{className:'section-divider'}),
-      React.createElement('p',{className:'section-title'},'Login Credentials'),
-      React.createElement('div',{className:'form-row'},
-        React.createElement('div',{className:'form-group'},React.createElement('label',null,'Username *'),React.createElement('input',{value:editing.username,onChange:e=>setEditing(v=>({...v,username:e.target.value})),placeholder:'e.g. mike',autoComplete:'off'})),
-        React.createElement('div',{className:'form-group'},
-          React.createElement('label',null,'Password *'),
-          React.createElement('div',{style:{position:'relative'}},
-            React.createElement('input',{type:showPw['form']?'text':'password',value:editing.password,onChange:e=>setEditing(v=>({...v,password:e.target.value})),placeholder:'Set a password',autoComplete:'new-password',style:{paddingRight:'40px'}}),
-            React.createElement('button',{onClick:()=>setShowPw(p=>({...p,form:!p.form})),style:{position:'absolute',right:'10px',top:'50%',transform:'translateY(-50%)',background:'none',border:'none',color:'var(--muted)',cursor:'pointer',fontSize:'14px'}},showPw['form']?'🙈':'👁')
-          )
-        )
-      ),
-      React.createElement('div',{style:{background:'rgba(200,146,42,.08)',border:'1px solid rgba(200,146,42,.2)',borderRadius:'8px',padding:'10px 14px',fontSize:'12px',color:'var(--muted)',marginTop:'4px'}},'💡 Crew members use these credentials to log into the dispatch app on their phone.'),
-      React.createElement('div',{className:'modal-actions'},
-        React.createElement('button',{className:'btn btn-outline',onClick:()=>{setShowForm(false);setEditing(null);}},'Cancel'),
-        React.createElement('button',{className:'btn btn-gold',onClick:handleSave},editing.id?'Save Changes':'Add Crew Member')
-      )
-    )
-  );
-
-  const UserCard=({u,isAdmin})=>{
-    const allEntries=jobs.flatMap(j=>(j.timeEntries||[]).filter(e=>e.crewId===u.id));
-    const totalMs=calcHours(allEntries);
-    const assignedJobs=jobs.filter(j=>j.crew.includes(u.id));
-    return React.createElement('div',{className:'crew-card'},
-      React.createElement('div',{className:'crew-avatar-lg',style:{background:isAdmin?'var(--navy-light)':u.role==='crew_lead'?'rgba(200,146,42,.3)':'var(--gold)',color:isAdmin?'var(--gold)':'var(--navy)'}},u.initials),
-      React.createElement('div',{style:{flex:1,minWidth:0}},
-        React.createElement('div',{style:{fontSize:'15px',fontWeight:'600'}},u.name),
-        React.createElement('div',{style:{fontSize:'11px',color:u.role==='crew_lead'?'var(--gold)':u.role==='admin'?'#5dade2':'var(--muted)',textTransform:'uppercase',letterSpacing:'1px',marginTop:'2px'}},
-          u.role==='crew_lead'?'⭐ Crew Lead':u.role==='admin'?'🔑 Admin':'Crew Member'
-        ),
-        React.createElement('div',{style:{fontSize:'12px',color:'var(--muted)',marginTop:'3px'}},u.phone||'No phone'),
-        React.createElement('div',{style:{display:'flex',alignItems:'center',gap:'8px',marginTop:'5px'}},
-          React.createElement('span',{style:{fontFamily:'DM Mono',fontSize:'11px',background:'var(--navy-light)',padding:'2px 8px',borderRadius:'4px',color:'var(--off-white)'}},u.username),
-          React.createElement('span',{style:{fontSize:'11px',color:'var(--muted)'}},'••••••••')
-        )
-      ),
-      React.createElement('div',{style:{display:'flex',flexDirection:'column',alignItems:'flex-end',gap:'10px'}},
-        !isAdmin&&React.createElement('div',{style:{textAlign:'right'}},
-          React.createElement('div',{style:{fontFamily:'Bebas Neue',fontSize:'22px',color:'var(--gold)',lineHeight:'1'}},assignedJobs.length),
-          React.createElement('div',{style:{color:'var(--muted)',fontSize:'10px',textTransform:'uppercase',letterSpacing:'1px'}},'Jobs'),
-          React.createElement('div',{style:{fontFamily:'DM Mono',fontSize:'12px',color:'var(--off-white)',marginTop:'3px'}},fmtHours(totalMs)),
-          React.createElement('div',{style:{color:'var(--muted)',fontSize:'10px',textTransform:'uppercase',letterSpacing:'1px'}},'Hours')
-        ),
-        React.createElement('div',{style:{display:'flex',gap:'6px'}},
-          React.createElement('button',{className:'btn btn-outline',style:{fontSize:'11px',padding:'6px 12px'},onClick:()=>openEdit(u)},'✏️ Edit'),
-          u.id!=='admin1'&&React.createElement('button',{className:'btn btn-danger',style:{fontSize:'11px',padding:'6px 12px'},onClick:()=>handleDelete(u.id)},'✕')
-        )
-      )
-    );
-  };
-
   return React.createElement('div',null,
     React.createElement('div',{className:'page-header'},
       React.createElement('div',null,React.createElement('h1',{className:'page-title'},'Crew'),React.createElement('p',{className:'page-subtitle'},crew.length+' crew members · '+admins.length+' admin'+(admins.length>1?'s':''))),
@@ -1565,14 +1713,14 @@ function AdminCrew({jobs,users,setUsers}){
       React.createElement('div',{style:{display:'flex',flexDirection:'column',gap:'10px',marginBottom:'28px'}},
         crew.length===0
           ?React.createElement('div',{className:'empty-state',style:{padding:'30px'}},React.createElement('div',{className:'empty-icon'},'👷'),React.createElement('h3',null,'No crew members yet'),React.createElement('p',null,'Add your first crew member above.'))
-          :crew.map(u=>React.createElement(UserCard,{key:u.id,u,isAdmin:false}))
+          :crew.map(u=>React.createElement(UserCard,{key:u.id,u,isAdmin:false,jobs,onEdit:openEdit,onDelete:handleDelete}))
       ),
       React.createElement('p',{className:'section-title'},'Admin Accounts'),
       React.createElement('div',{style:{display:'flex',flexDirection:'column',gap:'10px'}},
-        admins.map(u=>React.createElement(UserCard,{key:u.id,u,isAdmin:true}))
+        admins.map(u=>React.createElement(UserCard,{key:u.id,u,isAdmin:true,jobs,onEdit:openEdit,onDelete:handleDelete}))
       )
     ),
-    showForm&&editing&&React.createElement(UserForm)
+    showForm&&editing&&React.createElement(UserForm,{editing,setEditing,onSave:handleSave,onClose:()=>{setShowForm(false);setEditing(null);}})
   );
 }
 
@@ -1665,7 +1813,8 @@ function CrewView({jobs,setJobs,currentUser,showToast,mileageLog,setMileageLog})
         React.createElement('div',{className:'user-chip'},React.createElement('div',{className:'user-avatar'},currentUser.initials),React.createElement('div',null,React.createElement('div',{className:'user-name'},currentUser.name),React.createElement('div',{className:'user-role-text'},currentUser.role==='crew_lead'?'Lead':'Crew')))
       )
     ),
-    React.createElement('div',{className:'main'},React.createElement(MileageLog,{jobs,mileageLog,setMileageLog,currentUser,showToast}))
+    React.createElement('div',{className:'main'},React.createElement(MobileHeader,{user:currentUser,logout:()=>window.location.reload(),syncStatus:'local'}),React.createElement(MileageLog,{jobs,mileageLog,setMileageLog,currentUser,showToast})),
+    React.createElement(BottomTabBar,{nav:crewNav.map(n=>({...n,badge:0})),page,setPage})
   );
   return React.createElement('div',{className:'app-shell'},
     React.createElement('div',{className:'sidebar'},
@@ -1676,6 +1825,7 @@ function CrewView({jobs,setJobs,currentUser,showToast,mileageLog,setMileageLog})
       )
     ),
     React.createElement('div',{className:'main'},
+      React.createElement(MobileHeader,{user:currentUser,logout:()=>{setPage('jobs');showToast('Signed out');},syncStatus:'local'}),
       React.createElement('div',{className:'page-header'},React.createElement('div',null,React.createElement('h1',{className:'page-title'},'My Jobs'),React.createElement('p',{className:'page-subtitle'},upcoming.length+' upcoming'+(myUnreadReplies>0?' · '+myUnreadReplies+' new replies':'')))),
       React.createElement('div',{className:'page-body'},
         upcoming.length===0&&done.length===0&&React.createElement('div',{className:'empty-state'},React.createElement('div',{className:'empty-icon'},'🔧'),React.createElement('h3',null,'No jobs assigned yet')),
@@ -1720,6 +1870,39 @@ function CrewView({jobs,setJobs,currentUser,showToast,mileageLog,setMileageLog})
         )
       ),
       detail&&React.createElement(JobDetailModal,{job:detail,onClose:()=>setDetail(null),onStatusChange:statusChange,onSave:saveDetail,currentUser,showToast})
+    ),
+    React.createElement(BottomTabBar,{nav:crewNav.map(n=>({...n,badge:n.id==='jobs'?myUnreadReplies:0})),page,setPage})
+  );
+}
+
+// ── MOBILE HEADER ──
+function MobileHeader({user, logout, syncStatus}){
+  return React.createElement('div',{className:'mobile-header'},
+    React.createElement('img',{src:'https://www.atlanticsafe.com/uploads/2/3/8/2/23820942/published/atlantic-safe-co-logo-wht-bg.gif',alt:'ASC'}),
+    React.createElement('div',{className:'mobile-header-right'},
+      React.createElement('div',{style:{textAlign:'right'}},
+        React.createElement('div',{className:'mobile-header-user'},user.name),
+        React.createElement('div',{style:{fontSize:'9px',color:syncStatus==='synced'?'#27ae60':'var(--muted)'}},syncStatus==='synced'?'● Synced':'○ Local')
+      ),
+      React.createElement('button',{className:'mobile-signout',onClick:logout},'Sign Out')
+    )
+  );
+}
+
+// ── BOTTOM TAB BAR ──
+function BottomTabBar({nav, page, setPage}){
+  return React.createElement('div',{className:'bottom-tab-bar'},
+    React.createElement('div',{className:'bottom-tab-bar-inner'},
+      nav.map(n=>React.createElement('div',{key:n.id,className:'bottom-tab-wrap'},
+        React.createElement('button',{
+          className:'bottom-tab'+(page===n.id?' active':''),
+          onClick:()=>setPage(n.id)
+        },
+          n.badge>0&&React.createElement('span',{className:'bottom-tab-badge'},n.badge),
+          React.createElement('span',{className:'bottom-tab-icon'},n.icon),
+          React.createElement('span',{className:'bottom-tab-label'},n.label)
+        )
+      ))
     )
   );
 }
@@ -1757,11 +1940,18 @@ function App(){
   const pendingCOs=jobs.reduce((s,j)=>s+(j.changeOrders||[]).filter(co=>co.status==='pending').length,0);
   const adminNav=[
     {id:'jobs',icon:'📋',label:'Jobs',badge:totalUnread+pendingCOs},
-    {id:'map',icon:'🗺️',label:'Route Map'},
-    {id:'mileage',icon:'🚛',label:'Mileage'},
-    {id:'calendar',icon:'📅',label:'Calendar'},
-    {id:'crew',icon:'👷',label:'Crew'},
-    {id:'customers',icon:'👥',label:'Customers'},
+    {id:'map',icon:'🗺️',label:'Map',badge:0},
+    {id:'calendar',icon:'📅',label:'Schedule',badge:0},
+    {id:'crew',icon:'👷',label:'Crew',badge:0},
+    {id:'more',icon:'⋯',label:'More',badge:0},
+  ];
+  const adminSidebarNav=[
+    {id:'jobs',icon:'📋',label:'Jobs',badge:totalUnread+pendingCOs},
+    {id:'map',icon:'🗺️',label:'Route Map',badge:0},
+    {id:'mileage',icon:'🚛',label:'Mileage',badge:0},
+    {id:'calendar',icon:'📅',label:'Calendar',badge:0},
+    {id:'crew',icon:'👷',label:'Crew',badge:0},
+    {id:'customers',icon:'👥',label:'Customers',badge:0},
   ];
   function renderPage(){
     if(page==='jobs')return React.createElement(AdminJobs,{jobs,setJobs,currentUser:user,showToast});
@@ -1770,6 +1960,23 @@ function App(){
     if(page==='calendar')return React.createElement(AdminCalendar,{jobs,setJobs,currentUser:user,showToast});
     if(page==='crew')return React.createElement(AdminCrew,{jobs,users,setUsers});
     if(page==='customers')return React.createElement(AdminCustomers,{jobs});
+    if(page==='more')return React.createElement('div',null,
+      React.createElement('div',{className:'page-header'},React.createElement('div',null,React.createElement('h1',{className:'page-title'},'More'),React.createElement('p',{className:'page-subtitle'},'Additional options'))),
+      React.createElement('div',{className:'page-body'},
+        React.createElement('div',{style:{display:'flex',flexDirection:'column',gap:'10px'}},
+          [{id:'mileage',icon:'🚛',label:'Mileage Log'},{id:'customers',icon:'👥',label:'Customers'}].map(item=>
+            React.createElement('div',{key:item.id,onClick:()=>setPage(item.id),style:{background:'var(--navy-mid)',border:'1px solid var(--border)',borderRadius:'12px',padding:'16px 18px',display:'flex',alignItems:'center',gap:'14px',cursor:'pointer'}},
+              React.createElement('span',{style:{fontSize:'24px'}},item.icon),
+              React.createElement('span',{style:{fontSize:'15px',fontWeight:'600'}},item.label)
+            )
+          ),
+          React.createElement('div',{onClick:logout,style:{background:'rgba(192,57,43,.12)',border:'1px solid rgba(192,57,43,.3)',borderRadius:'12px',padding:'16px 18px',display:'flex',alignItems:'center',gap:'14px',cursor:'pointer',marginTop:'8px'}},
+            React.createElement('span',{style:{fontSize:'24px'}},'🚪'),
+            React.createElement('span',{style:{fontSize:'15px',fontWeight:'600',color:'#e74c3c'}},'Sign Out')
+          )
+        )
+      )
+    );
   }
   return React.createElement('div',{className:'app-shell'},
     React.createElement('div',{className:'sidebar'},
@@ -1779,7 +1986,7 @@ function App(){
         React.createElement('div',{className:'sidebar-role'},'Admin Panel')
       ),
       React.createElement('div',{className:'nav-section'},
-        adminNav.map(n=>React.createElement('div',{key:n.id,className:'nav-item'+(page===n.id?' active':''),onClick:()=>setPage(n.id)},
+        adminSidebarNav.map(n=>React.createElement('div',{key:n.id,className:'nav-item'+(page===n.id?' active':''),onClick:()=>setPage(n.id)},
           React.createElement('span',{className:'nav-icon'},n.icon),
           React.createElement('span',null,n.label),
           n.badge>0&&React.createElement('span',{className:'nav-badge'},n.badge)
@@ -1797,7 +2004,11 @@ function App(){
         React.createElement('button',{className:'btn btn-outline',onClick:logout,style:{width:'100%',marginTop:'10px',fontSize:'11px',justifyContent:'center'}},'Sign Out')
       )
     ),
-    React.createElement('div',{className:'main'},renderPage()),
+    React.createElement('div',{className:'main'},
+      React.createElement(MobileHeader,{user,logout,syncStatus}),
+      renderPage()
+    ),
+    React.createElement(BottomTabBar,{nav:adminNav,page,setPage}),
     toast&&React.createElement(Toast,{msg:toast})
   );
 }
