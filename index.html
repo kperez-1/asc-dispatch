@@ -276,6 +276,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script>
 const {useState,useEffect,useRef,useCallback} = React;
 
@@ -459,6 +461,9 @@ async function sendInvoiceEmail({ job, lines }) {
     const coText = approvedCOs.length > 0 ? approvedCOs.map(co=>`• Change Order: ${co.desc} — $${Number(co.amount).toFixed(2)}`).join('\n') : '';
     const total = lines.reduce((s,l)=>s+(l.qty||0)*(l.price||0),0) + approvedCOs.reduce((s,co)=>s+co.amount,0);
     const allLines = lineItemsText + (coText ? '\n' + coText : '');
+    // Generate PDF and convert to base64 data URL for download link
+    const doc = await generateInvoicePDF(job, lines);
+    const pdfBase64 = doc.output('datauristring');
     await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
       to_email:      job.email,
       to_name:       job.customer,
@@ -474,9 +479,137 @@ async function sendInvoiceEmail({ job, lines }) {
       extra_charge:  'N/A',
       subject:       `Invoice from Atlantic Safe Co — Job ${job.id}`
     }, EMAILJS_PUBLIC_KEY);
-    return true;
+    return { ok: true, pdfBase64 };
   } catch(e) { console.warn('Invoice email error:', e); return false; }
 }
+async function generateInvoicePDF(job, lines) {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'pt', format: 'letter' });
+  const W = doc.internal.pageSize.getWidth();
+  const logoUrl = 'https://www.atlanticsafe.com/uploads/2/3/8/2/23820942/published/atlantic-safe-co-logo-wht-bg.gif';
+  const approvedCOs = (job.changeOrders||[]).filter(co=>co.status==='approved');
+  const total = lines.reduce((s,l)=>s+(l.qty||0)*(l.price||0),0) + approvedCOs.reduce((s,co)=>s+co.amount,0);
+
+  // Load logo image
+  async function loadImg(url) {
+    return new Promise((res) => {
+      const img = new Image(); img.crossOrigin='anonymous';
+      img.onload = () => {
+        const c = document.createElement('canvas');
+        c.width=img.width; c.height=img.height;
+        c.getContext('2d').drawImage(img,0,0);
+        res(c.toDataURL('image/png'));
+      };
+      img.onerror = () => res(null);
+      img.src = url;
+    });
+  }
+
+  const logoData = await loadImg(logoUrl);
+
+  // ── HEADER BAND ──
+  doc.setFillColor(13, 27, 42); // navy
+  doc.rect(0, 0, W, 80, 'F');
+
+  // Logo
+  if (logoData) {
+    doc.addImage(logoData, 'PNG', 36, 12, 100, 56);
+  }
+
+  // INVOICE title on right
+  doc.setTextColor(200, 146, 42); // gold
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(28);
+  doc.text('INVOICE', W - 36, 44, { align: 'right' });
+  doc.setFontSize(10);
+  doc.setTextColor(138, 155, 176); // muted
+  doc.text('Atlantic Safe Company', W - 36, 60, { align: 'right' });
+  doc.text('772-204-9055 • atlanticsafe.com', W - 36, 73, { align: 'right' });
+
+  // ── INVOICE META ──
+  let y = 108;
+  doc.setTextColor(20, 20, 19);
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(10);
+  doc.text('Invoice #:', 36, y); doc.setFont('helvetica', 'normal');
+  doc.text(job.id + '-INV', 110, y);
+  y += 16;
+  doc.setFont('helvetica', 'bold');
+  doc.text('Date:', 36, y); doc.setFont('helvetica', 'normal');
+  doc.text(new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'}), 110, y);
+  y += 16;
+  doc.setFont('helvetica', 'bold');
+  doc.text('Service Addr:', 36, y); doc.setFont('helvetica', 'normal');
+  doc.text(job.deliveryAddr || '—', 110, y);
+
+  // Bill To box
+  doc.setFillColor(250, 249, 245);
+  doc.roundedRect(W - 200, 90, 164, 72, 4, 4, 'F');
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(9);
+  doc.setTextColor(138,155,176);
+  doc.text('BILL TO', W - 192, 106);
+  doc.setTextColor(20, 20, 19);
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(11);
+  doc.text(job.customer, W - 192, 122);
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
+  doc.text(job.phone || '', W - 192, 137);
+  doc.text(job.email || '', W - 192, 152);
+
+  // ── TABLE ──
+  y = 190;
+  // Header row
+  doc.setFillColor(13, 27, 42);
+  doc.rect(36, y, W - 72, 24, 'F');
+  doc.setTextColor(250, 249, 245);
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(9);
+  doc.text('DESCRIPTION', 48, y + 16);
+  doc.text('QTY', W - 200, y + 16, { align: 'center' });
+  doc.text('UNIT PRICE', W - 140, y + 16, { align: 'right' });
+  doc.text('TOTAL', W - 48, y + 16, { align: 'right' });
+  y += 24;
+
+  // Line items
+  const allLines = [
+    ...lines,
+    ...approvedCOs.map(co => ({ desc: 'Change Order: ' + co.desc, qty: 1, price: co.amount }))
+  ];
+  allLines.forEach((l, i) => {
+    const rowH = 28;
+    doc.setFillColor(i % 2 === 0 ? 255 : 245, i % 2 === 0 ? 255 : 249, i % 2 === 0 ? 255 : 245);
+    doc.rect(36, y, W - 72, rowH, 'F');
+    doc.setTextColor(20, 20, 19);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
+    doc.text(l.desc || '', 48, y + 18);
+    doc.text(String(l.qty || 0), W - 200, y + 18, { align: 'center' });
+    doc.text(fmtMoney(l.price), W - 140, y + 18, { align: 'right' });
+    doc.text(fmtMoney((l.qty || 0) * (l.price || 0)), W - 48, y + 18, { align: 'right' });
+    y += rowH;
+  });
+
+  // Total row
+  y += 8;
+  doc.setDrawColor(200, 146, 42);
+  doc.setLineWidth(1.5);
+  doc.line(36, y, W - 36, y);
+  y += 16;
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(13);
+  doc.setTextColor(13, 27, 42);
+  doc.text('TOTAL DUE', W - 140, y, { align: 'right' });
+  doc.setTextColor(200, 146, 42);
+  doc.setFontSize(16);
+  doc.text(fmtMoney(total), W - 48, y, { align: 'right' });
+
+  // ── FOOTER ──
+  y = doc.internal.pageSize.getHeight() - 50;
+  doc.setFillColor(13, 27, 42);
+  doc.rect(0, y, W, 50, 'F');
+  doc.setTextColor(138,155,176); doc.setFont('helvetica','normal'); doc.setFontSize(9);
+  doc.text('Thank you for choosing Atlantic Safe Company!', W/2, y+18, { align:'center' });
+  doc.text('atlanticsafe.com  •  772-204-9055  •  atlanticsafe@gmail.com', W/2, y+32, { align:'center' });
+  doc.text('Serving the Treasure Coast, Okeechobee & Palm Beaches', W/2, y+44, { align:'center' });
+
+  return doc;
+}
+
 function nextJobId(jobs){const nums=jobs.map(j=>parseInt(j.id.replace('JOB-',''))||0);return'JOB-'+String((Math.max(0,...nums)+1)).padStart(3,'0');}
 
 // ── HELPERS ──
@@ -901,7 +1034,12 @@ function InvoiceModal({job,onSave,onClose,onSend}){
       React.createElement('div',{className:'modal-header'},React.createElement('h2',{className:'modal-title'},'Invoice Preview'),React.createElement('button',{className:'modal-close',onClick:onClose},'×')),
       React.createElement('div',{className:'invoice-preview'},
         React.createElement('div',{className:'inv-header'},
-          React.createElement('div',null,React.createElement('div',{className:'inv-title'},'INVOICE'),React.createElement('div',{style:{fontSize:'13px',color:'#333',marginTop:'6px',fontWeight:'600'}},'Atlantic Safe Company'),React.createElement('div',{style:{fontSize:'12px',color:'#666'}},'772-204-9055 • atlanticsafe.com')),
+          React.createElement('div',null,
+            React.createElement('img',{src:'https://www.atlanticsafe.com/uploads/2/3/8/2/23820942/published/atlantic-safe-co-logo-wht-bg.gif',alt:'Atlantic Safe Co',style:{height:'52px',borderRadius:'4px',marginBottom:'8px',display:'block'}}),
+            React.createElement('div',{className:'inv-title'},'INVOICE'),
+            React.createElement('div',{style:{fontSize:'13px',color:'#333',marginTop:'4px',fontWeight:'600'}},'Atlantic Safe Company'),
+            React.createElement('div',{style:{fontSize:'12px',color:'#666'}},'772-204-9055 • atlanticsafe.com')
+          ),
           React.createElement('div',{className:'inv-meta'},'Invoice #: '+job.id+'-INV',React.createElement('br'),'Date: '+new Date().toLocaleDateString(),React.createElement('br'),React.createElement('br'),React.createElement('strong',null,'Bill To:'),React.createElement('br'),job.customer,React.createElement('br'),job.phone,React.createElement('br'),job.email)
         ),
         React.createElement('div',{style:{fontSize:'12px',color:'#666',marginBottom:'8px'}},'Service Address: '+job.deliveryAddr),
@@ -917,6 +1055,10 @@ function InvoiceModal({job,onSave,onClose,onSend}){
       ),
       React.createElement('div',{className:'modal-actions'},
         React.createElement('button',{className:'btn btn-outline',onClick:()=>setPreview(false)},'← Edit'),
+        React.createElement('button',{className:'btn btn-outline',style:{borderColor:'rgba(200,146,42,.4)',color:'var(--gold)'},onClick:async()=>{
+          const doc=await generateInvoicePDF(job,lines);
+          doc.save('Invoice-'+job.id+'-'+job.customer.replace(/\s+/g,'-')+'.pdf');
+        }},'⬇ Download PDF'),
         React.createElement('button',{className:'btn btn-gold',onClick:()=>{onSend(lines,sendTo);onSave(lines);onClose();}},sendTo==='email'?'📧 Email Invoice':'💬 Text Invoice Link')
       )
     )
@@ -993,8 +1135,15 @@ function JobDetailModal({job,onClose,onStatusChange,onSave,currentUser,showToast
   function handleInvoiceSave(lines){onSave({...job,invoiceLines:lines,status:job.status==='Complete'?'Invoiced':job.status});showToast('Invoice saved');}
   async function handleSendInvoice(lines,method){
     if(method==='email'){
-      const ok = await sendInvoiceEmail({job,lines});
-      showToast(ok?'Invoice emailed to '+job.email:'Email failed — check console');
+      const result = await sendInvoiceEmail({job,lines});
+      if(result && result.ok){
+        // Also auto-download PDF for admin records
+        const doc = await generateInvoicePDF(job,lines);
+        doc.save('Invoice-'+job.id+'-'+job.customer.replace(/\s+/g,'-')+'.pdf');
+        showToast('Invoice emailed to '+job.email+' & PDF downloaded');
+      } else {
+        showToast('Email failed — check console');
+      }
     } else {
       showToast('Invoice link texted to '+job.phone);
     }
