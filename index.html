@@ -450,6 +450,33 @@ async function sendCrewNotification({ jobId, jobCustomer, crewName, msgType, msg
     console.log('Email notification sent');
   } catch(e) { console.warn('EmailJS error:', e); }
 }
+
+async function sendInvoiceEmail({ job, lines }) {
+  if (!EMAILJS_READY()) { console.warn('EmailJS not configured'); return false; }
+  try {
+    const approvedCOs = (job.changeOrders||[]).filter(co=>co.status==='approved');
+    const lineItemsText = lines.map(l=>`• ${l.desc} (x${l.qty}) — $${Number((l.qty||0)*(l.price||0)).toFixed(2)}`).join('\n');
+    const coText = approvedCOs.length > 0 ? approvedCOs.map(co=>`• Change Order: ${co.desc} — $${Number(co.amount).toFixed(2)}`).join('\n') : '';
+    const total = lines.reduce((s,l)=>s+(l.qty||0)*(l.price||0),0) + approvedCOs.reduce((s,co)=>s+co.amount,0);
+    const allLines = lineItemsText + (coText ? '\n' + coText : '');
+    await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+      to_email:      job.email,
+      to_name:       job.customer,
+      from_name:     'Atlantic Safe Company',
+      job_id:        job.id,
+      customer:      job.customer,
+      msg_type:      'Invoice',
+      invoice_date:  new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'}),
+      delivery_addr: job.deliveryAddr,
+      invoice_lines: allLines,
+      total:         '$' + Number(total).toFixed(2),
+      message:       allLines,
+      extra_charge:  'N/A',
+      subject:       `Invoice from Atlantic Safe Co — Job ${job.id}`
+    }, EMAILJS_PUBLIC_KEY);
+    return true;
+  } catch(e) { console.warn('Invoice email error:', e); return false; }
+}
 function nextJobId(jobs){const nums=jobs.map(j=>parseInt(j.id.replace('JOB-',''))||0);return'JOB-'+String((Math.max(0,...nums)+1)).padStart(3,'0');}
 
 // ── HELPERS ──
@@ -964,7 +991,14 @@ function JobDetailModal({job,onClose,onStatusChange,onSave,currentUser,showToast
   function savePhotos(){onSave({...job,photos:photoFiles});showToast('Photos saved');}
   function handleMarkPaid(){onSave({...job,paid:true,status:'Paid'});showToast('Marked as Paid');}
   function handleInvoiceSave(lines){onSave({...job,invoiceLines:lines,status:job.status==='Complete'?'Invoiced':job.status});showToast('Invoice saved');}
-  function handleSendInvoice(_,method){showToast(method==='email'?'Invoice emailed to '+job.email:'Invoice link texted to '+job.phone);}
+  async function handleSendInvoice(lines,method){
+    if(method==='email'){
+      const ok = await sendInvoiceEmail({job,lines});
+      showToast(ok?'Invoice emailed to '+job.email:'Email failed — check console');
+    } else {
+      showToast('Invoice link texted to '+job.phone);
+    }
+  }
   function handleMessage(jobId,msg){onSave({...job,messages:[...(job.messages||[]),msg]});if(isAdmin)showToast('Message sent to crew');}
   function handleMarkRead(jobId){onSave({...job,messages:(job.messages||[]).map(m=>({...m,read:true}))});}
   function handleTimeEntry(jobId,entries){onSave({...job,timeEntries:entries});showToast('Time updated');}
