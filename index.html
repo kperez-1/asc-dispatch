@@ -299,7 +299,7 @@ const ADMIN_EMAIL         = 'atlanticsafe@gmail.com';
 const SHEETS_READY  = () => !!SHEETS_URL;
 const EMAILJS_READY = () => !!(EMAILJS_SERVICE_ID && EMAILJS_TEMPLATE_ID && EMAILJS_PUBLIC_KEY);
 
-const USERS = [
+const DEFAULT_USERS = [
   {id:'admin1',username:'owner',password:'atlantic2024',name:'Jason R.',role:'admin',phone:'772-555-0100',initials:'JR'},
   {id:'admin2',username:'admin',password:'SafeCo2026!',name:'Admin Test',role:'admin',phone:'772-204-9055',initials:'AT'},
   {id:'crew1',username:'mike',password:'crew1234',name:'Mike T.',role:'crew_lead',phone:'772-555-0101',initials:'MT'},
@@ -307,6 +307,9 @@ const USERS = [
   {id:'crew3',username:'alex',password:'crew1234',name:'Alex M.',role:'crew',phone:'772-555-0103',initials:'AM'},
   {id:'crew4',username:'sam',password:'crew1234',name:'Sam B.',role:'crew',phone:'772-555-0104',initials:'SB'},
 ];
+function loadUsers(){try{const d=localStorage.getItem('asc_users');return d?JSON.parse(d):DEFAULT_USERS;}catch{return DEFAULT_USERS;}}
+function saveUsers(u){try{localStorage.setItem('asc_users',JSON.stringify(u));}catch{}}
+let USERS = loadUsers();
 
 const DEFAULT_SERVICES = [
   {id:'s1',name:'Safe Delivery (Local)',price:150},
@@ -631,7 +634,7 @@ function Toast({msg}){return React.createElement('div',{className:'toast'},'✓ 
 // ── LOGIN ──
 function Login({onLogin}){
   const [u,setU]=useState('');const [p,setP]=useState('');const [err,setErr]=useState('');
-  function attempt(){const user=USERS.find(x=>x.username===u.trim().toLowerCase()&&x.password===p);if(user)onLogin(user);else setErr('Invalid username or password.');}
+  function attempt(){const user=loadUsers().find(x=>x.username===u.trim().toLowerCase()&&x.password===p);if(user)onLogin(user);else setErr('Invalid username or password.');}
   return React.createElement('div',{className:'login-wrap'},
     React.createElement('div',{className:'login-card'},
       React.createElement('div',{className:'login-logo'},
@@ -1450,33 +1453,126 @@ function AdminCalendar({jobs,setJobs,currentUser,showToast}){
 }
 
 // ── ADMIN CREW PAGE ──
-function AdminCrew({jobs}){
-  const crew=USERS.filter(u=>u.role!=='admin');
-  return React.createElement('div',null,
-    React.createElement('div',{className:'page-header'},React.createElement('div',null,React.createElement('h1',{className:'page-title'},'Crew'),React.createElement('p',{className:'page-subtitle'},'Team roster & hours summary'))),
-    React.createElement('div',{className:'page-body'},
-      React.createElement('div',{style:{display:'flex',flexDirection:'column',gap:'10px'}},
-        crew.map(u=>{
-          const allEntries=jobs.flatMap(j=>(j.timeEntries||[]).filter(e=>e.crewId===u.id));
-          const totalMs=calcHours(allEntries);
-          const assignedJobs=jobs.filter(j=>j.crew.includes(u.id));
-          return React.createElement('div',{key:u.id,className:'crew-card'},
-            React.createElement('div',{className:'crew-avatar-lg'},u.initials),
-            React.createElement('div',{style:{flex:1}},
-              React.createElement('div',{style:{fontSize:'15px',fontWeight:'600'}},u.name),
-              React.createElement('div',{style:{fontSize:'11px',color:u.role==='crew_lead'?'var(--gold)':'var(--muted)',textTransform:'uppercase',letterSpacing:'1px'}},u.role==='crew_lead'?'⭐ Crew Lead':'Crew Member'),
-              React.createElement('div',{style:{fontSize:'12px',color:'var(--muted)',marginTop:'2px'}},u.phone+' · Login: '+u.username)
-            ),
-            React.createElement('div',{style:{textAlign:'right',fontSize:'12px'}},
-              React.createElement('div',{style:{fontFamily:'Bebas Neue',fontSize:'22px',color:'var(--gold)'}},assignedJobs.length),
-              React.createElement('div',{style:{color:'var(--muted)',fontSize:'10px',textTransform:'uppercase',letterSpacing:'1px'}},'Total Jobs'),
-              React.createElement('div',{style:{fontFamily:'DM Mono',fontSize:'13px',color:'var(--off-white)',marginTop:'4px'}},fmtHours(totalMs)),
-              React.createElement('div',{style:{color:'var(--muted)',fontSize:'10px',textTransform:'uppercase',letterSpacing:'1px'}},'Total Hours')
-            )
-          );
-        })
+function AdminCrew({jobs,users,setUsers}){
+  const [showForm,setShowForm]=useState(false);
+  const [editing,setEditing]=useState(null);
+  const [showPw,setShowPw]=useState({});
+  const crew=users.filter(u=>u.role!=='admin');
+  const admins=users.filter(u=>u.role==='admin');
+
+  function initials(name){return name.split(' ').map(p=>p[0]).join('').toUpperCase().slice(0,2);}
+
+  function openAdd(){setEditing({id:'',name:'',username:'',password:'',phone:'',role:'crew',initials:''});setShowForm(true);}
+  function openEdit(u){setEditing({...u});setShowForm(true);}
+  function handleDelete(id){
+    if(!window.confirm('Remove this crew member? They will no longer be able to log in.'))return;
+    const updated=users.filter(u=>u.id!==id);
+    USERS=updated;setUsers(updated);saveUsers(updated);
+  }
+  function handleSave(){
+    if(!editing.name.trim()||!editing.username.trim()||!editing.password.trim())return alert('Name, username and password are required.');
+    if(users.find(u=>u.username===editing.username.trim().toLowerCase()&&u.id!==editing.id))return alert('Username already taken.');
+    const entry={
+      ...editing,
+      id:editing.id||'u'+Date.now(),
+      username:editing.username.trim().toLowerCase(),
+      name:editing.name.trim(),
+      phone:editing.phone.trim(),
+      initials:initials(editing.name.trim())
+    };
+    const updated=editing.id?users.map(u=>u.id===entry.id?entry:u):[...users,entry];
+    USERS=updated;setUsers(updated);saveUsers(updated);
+    setShowForm(false);setEditing(null);
+  }
+
+  const UserForm=()=>React.createElement('div',{className:'modal-bg',onClick:e=>{if(e.target===e.currentTarget){setShowForm(false);setEditing(null);}}},
+    React.createElement('div',{className:'modal',style:{maxWidth:'480px'}},
+      React.createElement('div',{className:'modal-header'},
+        React.createElement('h2',{className:'modal-title'},editing.id?'Edit User':'Add Crew Member'),
+        React.createElement('button',{className:'modal-close',onClick:()=>{setShowForm(false);setEditing(null);}},'×')
+      ),
+      React.createElement('div',{className:'form-row'},
+        React.createElement('div',{className:'form-group'},React.createElement('label',null,'Full Name *'),React.createElement('input',{value:editing.name,onChange:e=>setEditing(v=>({...v,name:e.target.value,initials:initials(e.target.value)})),placeholder:'e.g. Mike Torres'})),
+        React.createElement('div',{className:'form-group'},React.createElement('label',null,'Phone'),React.createElement('input',{value:editing.phone,onChange:e=>setEditing(v=>({...v,phone:e.target.value})),placeholder:'772-555-0000'}))
+      ),
+      React.createElement('div',{className:'form-group'},
+        React.createElement('label',null,'Role'),
+        React.createElement('select',{value:editing.role,onChange:e=>setEditing(v=>({...v,role:e.target.value}))},
+          React.createElement('option',{value:'crew'},'Crew Member'),
+          React.createElement('option',{value:'crew_lead'},'Crew Lead ⭐'),
+          React.createElement('option',{value:'admin'},'Admin')
+        )
+      ),
+      React.createElement('hr',{className:'section-divider'}),
+      React.createElement('p',{className:'section-title'},'Login Credentials'),
+      React.createElement('div',{className:'form-row'},
+        React.createElement('div',{className:'form-group'},React.createElement('label',null,'Username *'),React.createElement('input',{value:editing.username,onChange:e=>setEditing(v=>({...v,username:e.target.value})),placeholder:'e.g. mike',autoComplete:'off'})),
+        React.createElement('div',{className:'form-group'},
+          React.createElement('label',null,'Password *'),
+          React.createElement('div',{style:{position:'relative'}},
+            React.createElement('input',{type:showPw['form']?'text':'password',value:editing.password,onChange:e=>setEditing(v=>({...v,password:e.target.value})),placeholder:'Set a password',autoComplete:'new-password',style:{paddingRight:'40px'}}),
+            React.createElement('button',{onClick:()=>setShowPw(p=>({...p,form:!p.form})),style:{position:'absolute',right:'10px',top:'50%',transform:'translateY(-50%)',background:'none',border:'none',color:'var(--muted)',cursor:'pointer',fontSize:'14px'}},showPw['form']?'🙈':'👁')
+          )
+        )
+      ),
+      React.createElement('div',{style:{background:'rgba(200,146,42,.08)',border:'1px solid rgba(200,146,42,.2)',borderRadius:'8px',padding:'10px 14px',fontSize:'12px',color:'var(--muted)',marginTop:'4px'}},'💡 Crew members use these credentials to log into the dispatch app on their phone.'),
+      React.createElement('div',{className:'modal-actions'},
+        React.createElement('button',{className:'btn btn-outline',onClick:()=>{setShowForm(false);setEditing(null);}},'Cancel'),
+        React.createElement('button',{className:'btn btn-gold',onClick:handleSave},editing.id?'Save Changes':'Add Crew Member')
       )
     )
+  );
+
+  const UserCard=({u,isAdmin})=>{
+    const allEntries=jobs.flatMap(j=>(j.timeEntries||[]).filter(e=>e.crewId===u.id));
+    const totalMs=calcHours(allEntries);
+    const assignedJobs=jobs.filter(j=>j.crew.includes(u.id));
+    return React.createElement('div',{className:'crew-card'},
+      React.createElement('div',{className:'crew-avatar-lg',style:{background:isAdmin?'var(--navy-light)':u.role==='crew_lead'?'rgba(200,146,42,.3)':'var(--gold)',color:isAdmin?'var(--gold)':'var(--navy)'}},u.initials),
+      React.createElement('div',{style:{flex:1,minWidth:0}},
+        React.createElement('div',{style:{fontSize:'15px',fontWeight:'600'}},u.name),
+        React.createElement('div',{style:{fontSize:'11px',color:u.role==='crew_lead'?'var(--gold)':u.role==='admin'?'#5dade2':'var(--muted)',textTransform:'uppercase',letterSpacing:'1px',marginTop:'2px'}},
+          u.role==='crew_lead'?'⭐ Crew Lead':u.role==='admin'?'🔑 Admin':'Crew Member'
+        ),
+        React.createElement('div',{style:{fontSize:'12px',color:'var(--muted)',marginTop:'3px'}},u.phone||'No phone'),
+        React.createElement('div',{style:{display:'flex',alignItems:'center',gap:'8px',marginTop:'5px'}},
+          React.createElement('span',{style:{fontFamily:'DM Mono',fontSize:'11px',background:'var(--navy-light)',padding:'2px 8px',borderRadius:'4px',color:'var(--off-white)'}},u.username),
+          React.createElement('span',{style:{fontSize:'11px',color:'var(--muted)'}},'••••••••')
+        )
+      ),
+      React.createElement('div',{style:{display:'flex',flexDirection:'column',alignItems:'flex-end',gap:'10px'}},
+        !isAdmin&&React.createElement('div',{style:{textAlign:'right'}},
+          React.createElement('div',{style:{fontFamily:'Bebas Neue',fontSize:'22px',color:'var(--gold)',lineHeight:'1'}},assignedJobs.length),
+          React.createElement('div',{style:{color:'var(--muted)',fontSize:'10px',textTransform:'uppercase',letterSpacing:'1px'}},'Jobs'),
+          React.createElement('div',{style:{fontFamily:'DM Mono',fontSize:'12px',color:'var(--off-white)',marginTop:'3px'}},fmtHours(totalMs)),
+          React.createElement('div',{style:{color:'var(--muted)',fontSize:'10px',textTransform:'uppercase',letterSpacing:'1px'}},'Hours')
+        ),
+        React.createElement('div',{style:{display:'flex',gap:'6px'}},
+          React.createElement('button',{className:'btn btn-outline',style:{fontSize:'11px',padding:'6px 12px'},onClick:()=>openEdit(u)},'✏️ Edit'),
+          u.id!=='admin1'&&React.createElement('button',{className:'btn btn-danger',style:{fontSize:'11px',padding:'6px 12px'},onClick:()=>handleDelete(u.id)},'✕')
+        )
+      )
+    );
+  };
+
+  return React.createElement('div',null,
+    React.createElement('div',{className:'page-header'},
+      React.createElement('div',null,React.createElement('h1',{className:'page-title'},'Crew'),React.createElement('p',{className:'page-subtitle'},crew.length+' crew members · '+admins.length+' admin'+(admins.length>1?'s':''))),
+      React.createElement('button',{className:'btn btn-gold',onClick:openAdd},'+ Add Member')
+    ),
+    React.createElement('div',{className:'page-body'},
+      React.createElement('p',{className:'section-title'},'Crew Members'),
+      React.createElement('div',{style:{display:'flex',flexDirection:'column',gap:'10px',marginBottom:'28px'}},
+        crew.length===0
+          ?React.createElement('div',{className:'empty-state',style:{padding:'30px'}},React.createElement('div',{className:'empty-icon'},'👷'),React.createElement('h3',null,'No crew members yet'),React.createElement('p',null,'Add your first crew member above.'))
+          :crew.map(u=>React.createElement(UserCard,{key:u.id,u,isAdmin:false}))
+      ),
+      React.createElement('p',{className:'section-title'},'Admin Accounts'),
+      React.createElement('div',{style:{display:'flex',flexDirection:'column',gap:'10px'}},
+        admins.map(u=>React.createElement(UserCard,{key:u.id,u,isAdmin:true}))
+      )
+    ),
+    showForm&&editing&&React.createElement(UserForm)
   );
 }
 
@@ -1634,6 +1730,7 @@ function App(){
   const [page,setPage]=useState('jobs');
   const [jobs,setJobs]=useState(loadJobs);
   const [mileageLog,setMileageLog]=useState(loadMileage);
+  const [users,setUsers]=useState(loadUsers);
   const [toast,setToast]=useState(null);
   const [syncStatus,setSyncStatus]=useState(SHEETS_READY()?'syncing':'local');
 
@@ -1671,7 +1768,7 @@ function App(){
     if(page==='map')return React.createElement(AdminMapView,{jobs});
     if(page==='mileage')return React.createElement(MileageLog,{jobs,mileageLog,setMileageLog,currentUser:user,showToast});
     if(page==='calendar')return React.createElement(AdminCalendar,{jobs,setJobs,currentUser:user,showToast});
-    if(page==='crew')return React.createElement(AdminCrew,{jobs});
+    if(page==='crew')return React.createElement(AdminCrew,{jobs,users,setUsers});
     if(page==='customers')return React.createElement(AdminCustomers,{jobs});
   }
   return React.createElement('div',{className:'app-shell'},
