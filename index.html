@@ -306,7 +306,7 @@ const USERS = [
   {id:'crew4',username:'sam',password:'crew1234',name:'Sam B.',role:'crew',phone:'772-555-0104',initials:'SB'},
 ];
 
-const SERVICES = [
+const DEFAULT_SERVICES = [
   {id:'s1',name:'Safe Delivery (Local)',price:150},
   {id:'s2',name:'Safe Delivery (Long Distance)',price:250},
   {id:'s3',name:'Safe Move (In-Home)',price:125},
@@ -318,6 +318,9 @@ const SERVICES = [
   {id:'s9',name:'Trailer Fee',price:60},
   {id:'s10',name:'Rush / Same-Day Fee',price:100},
 ];
+function loadServices(){try{const d=localStorage.getItem('asc_services');return d?JSON.parse(d):DEFAULT_SERVICES;}catch{return DEFAULT_SERVICES;}}
+function saveServices(s){try{localStorage.setItem('asc_services',JSON.stringify(s));}catch{}}
+let SERVICES = loadServices();
 
 const STATUS_PIPELINE = ['New','Scheduled','En Route','On Site','Complete','Invoiced','Paid'];
 const STATUS_CLASS = {'New':'new','Scheduled':'scheduled','En Route':'enroute','On Site':'onsite','Complete':'complete','Invoiced':'invoiced','Paid':'paid'};
@@ -846,10 +849,26 @@ function InvoiceModal({job,onSave,onClose,onSend}){
   const [lines,setLines]=useState(job.invoiceLines&&job.invoiceLines.length?[...job.invoiceLines]:[]);
   const [sendTo,setSendTo]=useState('email');
   const [preview,setPreview]=useState(false);
+  const [services,setServices]=useState(loadServices());
+  const [customMode,setCustomMode]=useState({});
   const approvedCOs=(job.changeOrders||[]).filter(co=>co.status==='approved');
   const total=invoiceTotal(lines)+approvedCOs.reduce((s,co)=>s+co.amount,0);
-  function addLine(){setLines(l=>[...l,{serviceId:'s1',desc:SERVICES[0].name,qty:1,price:SERVICES[0].price}]);}
-  function removeLine(i){setLines(l=>l.filter((_,idx)=>idx!==i));}
+  function addLine(){setLines(l=>[...l,{serviceId:services[0]?.id||'s1',desc:services[0]?.name||'',qty:1,price:services[0]?.price||0,isCustom:false}]);}
+  function addCustomLine(){setLines(l=>[...l,{serviceId:'custom',desc:'',qty:1,price:0,isCustom:true}]);setCustomMode(m=>({...m,[lines.length]:true}));}
+  function removeLine(i){setLines(l=>l.filter((_,idx)=>idx!==i));setCustomMode(m=>{const n={...m};delete n[i];return n;});}
+  function updateLine(i,k,v){setLines(l=>l.map((x,idx)=>idx===i?{...x,[k]:v}:x));}
+  function selectService(i,id){
+    if(id==='custom'){setCustomMode(m=>({...m,[i]:true}));setLines(l=>l.map((x,idx)=>idx===i?{...x,serviceId:'custom',desc:'',price:0,isCustom:true}:x));}
+    else{const svc=services.find(s=>s.id===id);setCustomMode(m=>{const n={...m};delete n[i];return n;});if(svc)setLines(l=>l.map((x,idx)=>idx===i?{...x,serviceId:id,desc:svc.name,price:svc.price,isCustom:false}:x));}
+  }
+  function saveCustomToList(i){
+    const line=lines[i];if(!line.desc.trim())return alert('Enter a description first.');
+    const newSvc={id:'cs'+Date.now(),name:line.desc.trim(),price:line.price};
+    const updated=[...services,newSvc];setServices(updated);saveServices(updated);SERVICES=updated;
+    setLines(l=>l.map((x,idx)=>idx===i?{...x,serviceId:newSvc.id,isCustom:false}:x));
+    setCustomMode(m=>{const n={...m};delete n[i];return n;});
+    alert('✓ "'+newSvc.name+'" saved to your services list!');
+  }
   if(preview)return React.createElement('div',{className:'modal-bg',onClick:e=>{if(e.target===e.currentTarget)onClose();}},
     React.createElement('div',{className:'modal modal-wide'},
       React.createElement('div',{className:'modal-header'},React.createElement('h2',{className:'modal-title'},'Invoice Preview'),React.createElement('button',{className:'modal-close',onClick:onClose},'×')),
@@ -878,19 +897,35 @@ function InvoiceModal({job,onSave,onClose,onSend}){
   return React.createElement('div',{className:'modal-bg',onClick:e=>{if(e.target===e.currentTarget)onClose();}},
     React.createElement('div',{className:'modal'},
       React.createElement('div',{className:'modal-header'},React.createElement('h2',{className:'modal-title'},'Invoice — '+job.customer),React.createElement('button',{className:'modal-close',onClick:onClose},'×')),
-      React.createElement('p',{className:'section-title'},'Line Items'),
-      lines.map((l,i)=>React.createElement('div',{key:i,className:'invoice-line'},
-        React.createElement('select',{style:{background:'var(--navy-light)',border:'1px solid var(--border)',borderRadius:'6px',color:'var(--off-white)',fontFamily:'DM Sans',fontSize:'13px',padding:'8px'},value:l.serviceId,onChange:e=>{const svc=SERVICES.find(s=>s.id===e.target.value);setLines(ln=>ln.map((x,idx)=>idx===i?{...x,serviceId:svc?.id||'',desc:svc?.name||x.desc,price:svc?.price||x.price}:x));}},
-          SERVICES.map(s=>React.createElement('option',{key:s.id,value:s.id},s.name))
-        ),
-        React.createElement('input',{style:{background:'var(--navy-light)',border:'1px solid var(--border)',borderRadius:'6px',color:'var(--off-white)',fontFamily:'DM Sans',fontSize:'13px',padding:'8px',width:'100%'},type:'number',value:l.qty,min:0,onChange:e=>setLines(ln=>ln.map((x,idx)=>idx===i?{...x,qty:Number(e.target.value)}:x))}),
-        React.createElement('input',{style:{background:'var(--navy-light)',border:'1px solid var(--border)',borderRadius:'6px',color:'var(--off-white)',fontFamily:'DM Sans',fontSize:'13px',padding:'8px',width:'100%'},type:'number',value:l.price,min:0,onChange:e=>setLines(ln=>ln.map((x,idx)=>idx===i?{...x,price:Number(e.target.value)}:x))}),
-        React.createElement('button',{onClick:()=>removeLine(i),style:{background:'none',border:'none',color:'var(--muted)',fontSize:'18px',cursor:'pointer'}},'×')
-      )),
+      React.createElement('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'14px'}},
+        React.createElement('p',{className:'section-title',style:{marginBottom:0}},'Line Items'),
+        React.createElement('span',{style:{fontSize:'10px',color:'var(--muted)'}},services.length+' services in list')
+      ),
+      lines.map((l,i)=>{
+        const isCustom=customMode[i]||l.isCustom||l.serviceId==='custom';
+        return React.createElement('div',{key:i,style:{marginBottom:'10px'}},
+          React.createElement('div',{className:'invoice-line'},
+            isCustom
+              ?React.createElement('input',{style:{background:'var(--navy-light)',border:'1px solid var(--gold)',borderRadius:'6px',color:'var(--off-white)',fontFamily:'DM Sans',fontSize:'13px',padding:'8px',width:'100%'},placeholder:'Custom description...',value:l.desc,onChange:e=>updateLine(i,'desc',e.target.value)})
+              :React.createElement('select',{style:{background:'var(--navy-light)',border:'1px solid var(--border)',borderRadius:'6px',color:'var(--off-white)',fontFamily:'DM Sans',fontSize:'13px',padding:'8px'},value:l.serviceId,onChange:e=>selectService(i,e.target.value)},
+                services.map(s=>React.createElement('option',{key:s.id,value:s.id},s.name)),
+                React.createElement('option',{value:'custom'},'✏️ Custom / Enter manually...')
+              ),
+            React.createElement('input',{style:{background:'var(--navy-light)',border:'1px solid var(--border)',borderRadius:'6px',color:'var(--off-white)',fontFamily:'DM Sans',fontSize:'13px',padding:'8px',width:'100%'},type:'number',value:l.qty,min:0,onChange:e=>updateLine(i,'qty',Number(e.target.value))}),
+            React.createElement('input',{style:{background:'var(--navy-light)',border:'1px solid var(--border)',borderRadius:'6px',color:'var(--off-white)',fontFamily:'DM Sans',fontSize:'13px',padding:'8px',width:'100%'},type:'number',value:l.price,min:0,onChange:e=>updateLine(i,'price',Number(e.target.value))}),
+            React.createElement('button',{onClick:()=>removeLine(i),style:{background:'none',border:'none',color:'var(--muted)',fontSize:'18px',cursor:'pointer'}},'×')
+          ),
+          isCustom&&React.createElement('div',{style:{display:'flex',alignItems:'center',gap:'8px',marginTop:'5px',paddingLeft:'2px'}},
+            React.createElement('span',{style:{fontSize:'11px',color:'var(--muted)'}},'Custom —'),
+            React.createElement('button',{onClick:()=>saveCustomToList(i),style:{fontSize:'11px',fontWeight:'700',color:'var(--gold)',background:'rgba(200,146,42,.1)',border:'1px solid rgba(200,146,42,.3)',borderRadius:'6px',padding:'3px 10px',cursor:'pointer'}},'💾 Save to list'),
+            React.createElement('button',{onClick:()=>{setCustomMode(m=>{const n={...m};delete n[i];return n;});selectService(i,services[0]?.id||'s1');},style:{fontSize:'11px',color:'var(--muted)',background:'none',border:'none',cursor:'pointer',textDecoration:'underline'}},'cancel')
+          )
+        );
+      }),
       approvedCOs.length>0&&React.createElement('div',{style:{background:'rgba(39,174,96,.08)',border:'1px solid rgba(39,174,96,.2)',borderRadius:'8px',padding:'10px 14px',marginBottom:'12px',fontSize:'12px',color:'#58d68d'}},
         '✓ '+approvedCOs.length+' approved change order'+(approvedCOs.length>1?'s':'')+' will be added: +'+fmtMoney(approvedCOs.reduce((s,co)=>s+co.amount,0))
       ),
-      React.createElement('button',{className:'btn btn-outline',onClick:addLine,style:{marginBottom:'12px'}},'+ Add Line Item'),
+      React.createElement('div',{style:{display:'flex',gap:'8px',marginBottom:'16px'}},React.createElement('button',{className:'btn btn-outline',onClick:addLine},'+ From List'),React.createElement('button',{className:'btn btn-outline',onClick:addCustomLine,style:{borderColor:'rgba(200,146,42,.4)',color:'var(--gold)'}},'✏️ Custom Item')),
       React.createElement('div',{className:'invoice-total'},'Total: '+fmtMoney(total)),
       React.createElement('hr',{className:'section-divider'}),
       React.createElement('p',{className:'section-title'},'Send To Customer'),
